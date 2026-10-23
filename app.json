@@ -198,16 +198,16 @@
       {
         "id": "condition_changed",
         "title": {
-          "en": "The weather changed",
-          "es": "Ha cambiado el tiempo"
+          "en": "The conditions changed",
+          "es": "Cambia el estado del cielo"
         },
         "tokens": [
           {
             "name": "condition",
             "type": "string",
             "title": {
-              "en": "Weather",
-              "es": "Tiempo"
+              "en": "Conditions",
+              "es": "Estado del cielo"
             },
             "example": {
               "en": "Showers",
@@ -245,8 +245,8 @@
             "name": "minutes",
             "type": "dropdown",
             "title": {
-              "en": "Time",
-              "es": "Tiempo"
+              "en": "Within",
+              "es": "Plazo"
             },
             "values": [
               {
@@ -622,8 +622,8 @@
   "drivers": [
     {
       "name": {
-        "en": "Weather at home",
-        "es": "El tiempo en casa"
+        "en": "Forecast for your home",
+        "es": "Previsión para tu casa"
       },
       "class": "sensor",
       "platforms": [
@@ -687,7 +687,7 @@
     "weather": {
       "name": {
         "en": "MeteoVeo",
-        "es": "El tiempo"
+        "es": "MeteoVeo"
       },
       "height": 560,
       "transparent": true,
@@ -747,8 +747,8 @@
     "meteoveo_condition": {
       "type": "enum",
       "title": {
-        "en": "Weather",
-        "es": "Tiempo"
+        "en": "Conditions",
+        "es": "Estado del cielo"
       },
       "getable": true,
       "setable": false,
