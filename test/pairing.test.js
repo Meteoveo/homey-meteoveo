@@ -36,7 +36,7 @@ test('new account: signup, code, login, then key; the JWT is dropped afterwards'
   assert.deepEqual(client.calls.map((c) => c[0]), ['signup', 'verify', 'login', 'createKey']);
   assert.deepEqual(client.calls[0][1], { email: 'a@b.es', password: '12345678', marketingConsent: false, lang: 'es' });
   assert.deepEqual(client.calls[1][1], { email: 'a@b.es', code: '123456' });
-  assert.equal(device.name, 'Almiserà');
+  assert.equal(device.name, 'MeteoVeo Almiserà');
   assert.equal(device.store.key, 'mvik_k1.s');
   assert.equal(device.data.id, 'k1');
   assert.equal(device.store.station, null);
