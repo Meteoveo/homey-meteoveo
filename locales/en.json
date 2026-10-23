@@ -45,7 +45,8 @@
       "height": "Sensor height above ground (cm)",
       "height_hint": "Used to compare your readings with nearby stations.",
       "flow_hint": "After pairing, add a Flow such as: When the temperature of your station changes → MeteoVeo: Send temperature.",
-      "none": "Not this one"
+      "none": "Not this one",
+      "found": "We found a weather station in your Homey: __name__. Its readings are selected below; check them before you finish."
     }
   },
   "measurements": {

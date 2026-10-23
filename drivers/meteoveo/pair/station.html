@@ -5,6 +5,7 @@
 </header>
 
 <form class="homey-form">
+  <p class="mv-found" id="found" style="display:none"></p>
   <fieldset class="homey-form-radio-set">
     <label class="homey-form-radio">
       <input class="homey-form-radio-input" type="radio" name="have" value="no" checked />
@@ -37,7 +38,10 @@
 </form>
 </div>
 
-<style>.mv-hint { font-size: 13px; opacity: .7; margin: 6px 0 16px; }</style>
+<style>
+  #mv-station .mv-hint { font-size: 13px; opacity: .7; margin: 6px 0 16px; }
+  #mv-station .mv-found { margin: 0 0 12px; padding: 10px 12px; border-radius: 10px; background: rgba(43, 111, 168, .1); font-size: 14px; }
+</style>
 
 <script type="text/javascript">
   // Each view in its own scope, and every lookup inside its own root: the
@@ -48,6 +52,20 @@
     root.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
     const have = () => root.querySelector('input[name="have"]:checked').value;
     let candidates = null;
+    let detected = { station: null, preselect: {} };
+    let loading = null;
+
+    // Candidates are read once, on load: a station found among the Homey
+    // devices is proposed right away instead of after a hunt through menus.
+    function load() {
+      if (!loading) {
+        loading = Homey.emit('station_candidates').then((result) => {
+          candidates = (result && result.candidates) || {};
+          detected = (result && result.detected) || detected;
+        });
+      }
+      return loading;
+    }
 
     function explain(err) {
       const key = 'errors.' + (err && err.message);
@@ -61,7 +79,7 @@
       if (have() !== 'devices') return;
       if (!candidates) {
         Homey.showLoadingOverlay();
-        try { candidates = await Homey.emit('station_candidates'); } catch (err) { explain(err); return; } finally { Homey.hideLoadingOverlay(); }
+        try { await load(); } catch (err) { explain(err); return; } finally { Homey.hideLoadingOverlay(); }
       }
       for (const [measurement, list] of Object.entries(candidates)) {
         const group = document.createElement('div');
@@ -80,6 +98,8 @@
           const now = c.value === null ? '' : ' (' + c.value + ' ' + c.units + ')';
           select.add(new Option(c.name + where + now, JSON.stringify({ deviceId: c.deviceId, capability: c.capability })));
         }
+        const pick = detected.preselect[measurement];
+        if (pick) select.value = JSON.stringify({ deviceId: pick.deviceId, capability: pick.capability });
         group.append(label, select);
         box.append(group);
       }
@@ -92,6 +112,16 @@
       renderSources();
     }
     root.querySelectorAll('input[name="have"]').forEach((el) => el.addEventListener('change', render));
+
+    load().then(() => {
+      if (!detected.station) return;
+      const where = detected.station.zone ? ' · ' + detected.station.zone : '';
+      const found = root.querySelector('#found');
+      found.textContent = Homey.__('pair.station.found', { name: detected.station.name + where });
+      found.style.display = '';
+      root.querySelector('input[name="have"][value="devices"]').checked = true;
+      render();
+    }).catch(() => {});
 
     let busy = false;
     root.querySelector('form').addEventListener('submit', async (event) => {
