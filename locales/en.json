@@ -45,7 +45,7 @@
       "height": "Sensor height above ground (cm)",
       "height_hint": "Used to compare your readings with nearby stations.",
       "flow_hint": "After pairing, add a Flow such as: When the temperature of your station changes → MeteoVeo: Send temperature.",
-      "none": "Not this one",
+      "none": "None",
       "found": "We found a weather station in your Homey: __name__. Its readings are selected below; check them before you finish.",
       "climate_tip": "Tip: put this device in an outdoor zone (Garden, Terrace) or switch on “Exclude from climate” in its advanced settings, so the outdoor temperature does not mix with your rooms."
     }
@@ -81,7 +81,7 @@
     "invalid_credentials": "Wrong e-mail or password. If you signed up with Google, Apple or a passkey, set a password in the MeteoVeo app first.",
     "registration_closed": "New accounts cannot be created right now. Please try again later.",
     "invalid_location": "That location is outside the area MeteoVeo covers (Spain and its islands).",
-    "too_many_keys": "Your account already has 5 connected locations. Remove one in Home Assistant or Homey first.",
+    "too_many_keys": "Your account already has 5 connected locations. Remove one in Homey or Home Assistant first.",
     "unknown_station": "That station does not belong to your account.",
     "location_required": "Choose a location first.",
     "not_signed_in": "Sign in first.",
@@ -122,7 +122,7 @@
   },
   "notifications": {
     "account_deleted": "Your MeteoVeo account was deleted. You can now remove the MeteoVeo devices.",
-    "warning": "__level__ warning for __phenomenon__ in __place__, until __until__",
+    "warning": "__level__ warning for __phenomenon__ in __place__ until __until__",
     "rain": "Rain in __place__ in about __minutes__ min",
     "climate": "__device__ is in the zone “__zone__”, so its outdoor temperature counts in that room's climate. Move it to an outdoor zone (Garden, Terrace) or switch on “Exclude from climate” in its advanced settings."
   },

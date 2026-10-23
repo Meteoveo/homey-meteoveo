@@ -12,8 +12,8 @@
     "es": "MeteoVeo"
   },
   "description": {
-    "en": "Know when it will rain at home in Spain, minute by minute",
-    "es": "Sabe cuándo va a llover en tu casa, minuto a minuto"
+    "en": "Rain at your home in Spain, minute by minute, from radar, nearby stations and AEMET",
+    "es": "Lluvia en tu casa minuto a minuto, con radar, estaciones cercanas y AEMET"
   },
   "category": [
     "climate"
@@ -29,13 +29,14 @@
       "rain",
       "forecast",
       "nowcast",
+      "radar",
       "spain",
       "aemet",
       "weather station",
       "warnings"
     ],
     "es": [
-      "tiempo",
+      "meteorología",
       "lluvia",
       "previsión",
       "radar",
@@ -122,8 +123,12 @@
       {
         "id": "rain_started",
         "title": {
-          "en": "It started raining",
-          "es": "Ha empezado a llover"
+          "en": "It starts raining",
+          "es": "Empieza a llover"
+        },
+        "hint": {
+          "en": "When rain reaches your home, from radar and nearby stations.",
+          "es": "Cuando la lluvia llega a tu casa, según el radar y las estaciones cercanas."
         },
         "tokens": [
           {
@@ -146,8 +151,8 @@
       {
         "id": "rain_stopped",
         "title": {
-          "en": "It stopped raining",
-          "es": "Ha dejado de llover"
+          "en": "It stops raining",
+          "es": "Deja de llover"
         },
         "hint": {
           "en": "After ten minutes without rain, so a short break in a shower does not count.",
@@ -193,8 +198,8 @@
             "name": "headline",
             "type": "string",
             "title": {
-              "en": "Text (AEMET)",
-              "es": "Texto (AEMET)"
+              "en": "AEMET text",
+              "es": "Texto de AEMET"
             },
             "example": "Acumulación de 40 mm en 12 horas"
           },
@@ -236,7 +241,7 @@
       {
         "id": "condition_changed",
         "title": {
-          "en": "The conditions changed",
+          "en": "The conditions change",
           "es": "Cambia el estado del cielo"
         },
         "tokens": [
@@ -293,7 +298,7 @@
       {
         "id": "warning_level_changed",
         "title": {
-          "en": "The warning level changed",
+          "en": "The warning level changes",
           "es": "Cambia el nivel de aviso"
         },
         "tokens": [
@@ -333,8 +338,8 @@
       {
         "id": "warning_cleared",
         "title": {
-          "en": "No more active warnings",
-          "es": "Ya no hay avisos activos"
+          "en": "All warnings are cleared",
+          "es": "Ya no queda ningún aviso activo"
         },
         "args": [
           {
@@ -468,12 +473,12 @@
       {
         "id": "rain_intensity_within",
         "title": {
-          "en": "It will !{{|not }}rain hard soon",
-          "es": "!{{Va|No va}} a llover con fuerza pronto"
+          "en": "Rain of at least an intensity is !{{|not }}expected",
+          "es": "!{{Se espera|No se espera}} lluvia de cierta intensidad"
         },
         "titleFormatted": {
-          "en": "It will !{{|not }}rain [[intensity]] or heavier within [[minutes]]",
-          "es": "!{{Va|No va}} a llover de forma [[intensity]] o más en [[minutes]]"
+          "en": "Rain at least [[intensity]] is !{{|not }}expected within [[minutes]]",
+          "es": "!{{Se espera|No se espera}} lluvia [[intensity]] o más fuerte en [[minutes]]"
         },
         "args": [
           {
@@ -548,8 +553,8 @@
       {
         "id": "warning_type_active",
         "title": {
-          "en": "A warning of a kind is !{{|not }}active",
-          "es": "!{{Hay|No hay}} un aviso de un tipo"
+          "en": "A warning for a phenomenon is !{{|not }}active",
+          "es": "!{{Hay|No hay}} un aviso por un fenómeno"
         },
         "titleFormatted": {
           "en": "A [[phenomenon]] warning of level [[level]] or higher is !{{|not }}active",
@@ -565,8 +570,8 @@
             "name": "phenomenon",
             "type": "dropdown",
             "title": {
-              "en": "Kind",
-              "es": "Tipo"
+              "en": "Phenomenon",
+              "es": "Fenómeno"
             },
             "values": [
               {
@@ -905,7 +910,7 @@
           "es": "Fuera !{{hace|no hace}} al menos [[margin]] °C menos que [[indoor]] °C"
         },
         "hint": {
-          "en": "Drop the temperature of an indoor sensor into the field: good for opening windows instead of the air conditioning.",
+          "en": "Put the temperature of an indoor sensor in the field: handy for opening the windows instead of running the air conditioning.",
           "es": "Pon en el campo la temperatura de un sensor de dentro: útil para abrir ventanas en lugar de encender el aire acondicionado."
         },
         "args": [
@@ -1229,8 +1234,8 @@
           "es": "Obtener la previsión de [[day]]"
         },
         "hint": {
-          "en": "Gives the day's maximum, minimum, conditions, chance of rain and a ready sentence for a notification.",
-          "es": "Da la máxima, la mínima, el estado del cielo, la probabilidad de lluvia y una frase lista para una notificación."
+          "en": "Gives the day's maximum, minimum, conditions and chance of rain, plus a ready-made sentence for a notification.",
+          "es": "Da la máxima, la mínima, el estado del cielo y la probabilidad de lluvia, más una frase lista para una notificación."
         },
         "args": [
           {
@@ -1417,8 +1422,8 @@
         },
         "measure_ultraviolet.max_today": {
           "title": {
-            "en": "UV maximum today",
-            "es": "UV máximo de hoy"
+            "en": "UV index maximum today",
+            "es": "Índice UV máximo de hoy"
           }
         },
         "measure_temperature.feels_like": {
@@ -1477,8 +1482,8 @@
                 "es": "Avisos de AEMET en la línea de tiempo"
               },
               "hint": {
-                "en": "A notification in the Homey timeline when a warning is issued for your area. No Flow needed.",
-                "es": "Una notificación en la línea de tiempo de Homey cuando se activa un aviso en tu zona. Sin crear ningún Flow."
+                "en": "A notification in the Homey timeline when AEMET issues a warning for your area. No Flow needed.",
+                "es": "Una notificación en la línea de tiempo de Homey cuando AEMET activa un aviso en tu zona. Sin crear ningún Flow."
               },
               "values": [
                 {
@@ -1520,8 +1525,8 @@
                 "es": "Lluvia en camino, en la línea de tiempo"
               },
               "hint": {
-                "en": "A notification when the next-hour forecast first shows rain coming.",
-                "es": "Una notificación cuando la previsión de la próxima hora muestra lluvia en camino."
+                "en": "A notification when the next-hour forecast first shows rain on its way.",
+                "es": "Una notificación cuando la previsión de la próxima hora muestra por primera vez lluvia en camino."
               }
             }
           ]
@@ -1559,8 +1564,8 @@
             "es": "Zona"
           },
           "hint": {
-            "en": "Local is about 30 km across, District about 100 km, Region about 400 km.",
-            "es": "Local abarca unos 30 km, Comarca unos 100 km y Región unos 400 km."
+            "en": "Local shows about 30 km across, District about 100 km, Region about 400 km.",
+            "es": "Local abarca unos 30 km; Comarca, unos 100 km; Región, unos 400 km."
           },
           "value": "comarca",
           "values": [
@@ -1806,7 +1811,7 @@
         {
           "id": "ismeretlen",
           "title": {
-            "en": "Unknown",
+            "en": "No data",
             "es": "Sin datos"
           }
         }

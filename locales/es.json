@@ -26,12 +26,12 @@
     },
     "location": {
       "title": "¿Dónde está tu casa?",
-      "subtitle": "Busca tu pueblo y pon el marcador en tu casa. Guardamos la ubicación redondeada a 1 km aproximadamente.",
+      "subtitle": "Busca tu localidad y pon el marcador en tu casa. Guardamos la ubicación redondeada a 1 km aproximadamente.",
       "lat": "Latitud",
       "lon": "Longitud",
       "hint": "MeteoVeo cubre España, Baleares, Canarias, Ceuta y Melilla.",
-      "search": "Busca tu pueblo o ciudad",
-      "search_none": "No hay ningún pueblo con ese nombre.",
+      "search": "Busca tu localidad",
+      "search_none": "No hay ninguna localidad con ese nombre.",
       "map_hint": "Toca el mapa o arrastra el marcador hasta tu casa.",
       "use_homey": "Usar la ubicación de mi Homey",
       "coords": "Coordenadas"
@@ -81,7 +81,7 @@
     "invalid_credentials": "Correo o contraseña incorrectos. Si te registraste con Google, Apple o una llave de acceso, crea antes una contraseña en la app de MeteoVeo.",
     "registration_closed": "Ahora mismo no se pueden crear cuentas nuevas. Inténtalo más tarde.",
     "invalid_location": "Esa ubicación está fuera de la zona que cubre MeteoVeo (España y sus islas).",
-    "too_many_keys": "Tu cuenta ya tiene 5 ubicaciones conectadas. Quita una antes en Home Assistant o en Homey.",
+    "too_many_keys": "Tu cuenta ya tiene 5 ubicaciones conectadas. Quita una antes en Homey o en Home Assistant.",
     "unknown_station": "Esa estación no es de tu cuenta.",
     "location_required": "Primero elige una ubicación.",
     "not_signed_in": "Primero inicia sesión.",
@@ -122,7 +122,7 @@
   },
   "notifications": {
     "account_deleted": "Tu cuenta de MeteoVeo se ha eliminado. Ya puedes quitar los dispositivos de MeteoVeo.",
-    "warning": "Aviso __level__ por __phenomenon__ en __place__, hasta las __until__",
+    "warning": "Aviso __level__ por __phenomenon__ en __place__ hasta el __until__",
     "rain": "Lluvia en __place__ dentro de unos __minutes__ min",
     "climate": "__device__ está en la zona «__zone__», así que su temperatura exterior cuenta en el clima de esa estancia. Muévelo a una zona exterior (Jardín, Terraza) o activa «Excluir del clima» en sus ajustes avanzados."
   },

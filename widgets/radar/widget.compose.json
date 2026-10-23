@@ -26,14 +26,32 @@
         "es": "Zona"
       },
       "hint": {
-        "en": "Local is about 30 km across, District about 100 km, Region about 400 km.",
-        "es": "Local abarca unos 30 km, Comarca unos 100 km y Región unos 400 km."
+        "en": "Local shows about 30 km across, District about 100 km, Region about 400 km.",
+        "es": "Local abarca unos 30 km; Comarca, unos 100 km; Región, unos 400 km."
       },
       "value": "comarca",
       "values": [
-        { "id": "local", "title": { "en": "Local", "es": "Local" } },
-        { "id": "comarca", "title": { "en": "District", "es": "Comarca" } },
-        { "id": "region", "title": { "en": "Region", "es": "Región" } }
+        {
+          "id": "local",
+          "title": {
+            "en": "Local",
+            "es": "Local"
+          }
+        },
+        {
+          "id": "comarca",
+          "title": {
+            "en": "District",
+            "es": "Comarca"
+          }
+        },
+        {
+          "id": "region",
+          "title": {
+            "en": "Region",
+            "es": "Región"
+          }
+        }
       ]
     },
     {
@@ -49,10 +67,34 @@
       },
       "value": "auto",
       "values": [
-        { "id": "auto", "title": { "en": "Automatic", "es": "Automático" } },
-        { "id": "es", "title": { "en": "Español", "es": "Español" } },
-        { "id": "en", "title": { "en": "English", "es": "English" } },
-        { "id": "ca", "title": { "en": "Català", "es": "Català" } }
+        {
+          "id": "auto",
+          "title": {
+            "en": "Automatic",
+            "es": "Automático"
+          }
+        },
+        {
+          "id": "es",
+          "title": {
+            "en": "Español",
+            "es": "Español"
+          }
+        },
+        {
+          "id": "en",
+          "title": {
+            "en": "English",
+            "es": "English"
+          }
+        },
+        {
+          "id": "ca",
+          "title": {
+            "en": "Català",
+            "es": "Català"
+          }
+        }
       ]
     }
   ],

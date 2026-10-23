@@ -1,6 +1,6 @@
 {
   "0.1.0": {
-    "en": "First release: next-hour rain, current weather, AEMET warnings, Flow cards, a dashboard widget and weather-station upload.",
-    "es": "Primera versión: lluvia de la próxima hora, el estado actual, avisos de AEMET, tarjetas de Flow, un widget para el panel y envío de tu estación."
+    "en": "First release: next-hour rain, our own 3-hour forecast, current conditions, AEMET warnings, Flow cards, two dashboard widgets (forecast and radar) and weather-station upload.",
+    "es": "Primera versión: lluvia de la próxima hora, nuestra previsión de las próximas 3 horas, el estado del cielo actual, avisos de AEMET, tarjetas de Flow, dos widgets para el panel (previsión y radar) y envío de las medidas de tu estación."
   }
 }
