@@ -84,8 +84,8 @@ class MeteoVeoApp extends Homey.App {
   }
 
   /** Stores the layout from the widget's edit mode and answers with what was kept. */
-  saveWidgetLayout(instanceId, cards) {
-    const layout = normalizeLayout({ cards });
+  saveWidgetLayout(instanceId, cards, background) {
+    const layout = normalizeLayout({ cards, background });
     const key = layoutKey(instanceId);
     if (key) this.homey.settings.set(key, layout);
     return layout;

@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { CARDS, CARD_IDS, defaultLayout, normalizeLayout, layoutKey, isConditional } = require('../lib/widget-layout');
+const { CARDS, CARD_IDS, DEFAULT_BACKGROUND, defaultLayout, normalizeLayout, normalizeBackground, normalizeColor, layoutKey, isConditional } = require('../lib/widget-layout');
 
 const ids = (layout) => layout.cards.map((c) => c.id);
 const showOf = (layout, id) => layout.cards.find((c) => c.id === id).show;
@@ -27,9 +27,9 @@ test('warning, nextHour and nowcast3h are the conditional cards', () => {
 
 test('a saved order and the three states are kept', () => {
   const saved = { cards: [{ id: 'days', show: 'always' }, { id: 'hero', show: 'always' }, { id: 'nextHour', show: 'auto' }, { id: 'nowcast3h', show: 'never' },
-    { id: 'warning', show: 'never' }, { id: 'metrics', show: 'never' }, { id: 'hours', show: 'always' }] };
+    { id: 'warning', show: 'never' }, { id: 'metrics', show: 'never' }, { id: 'hours', show: 'always' }], background: { mode: 'color', color: '#f1f8f4', opacity: 60 } };
   assert.deepEqual(normalizeLayout(saved), saved);
-  assert.deepEqual(normalizeLayout(saved.cards), saved); // a bare array works too
+  assert.deepEqual(normalizeLayout(saved.cards), { cards: saved.cards, background: { ...DEFAULT_BACKGROUND } }); // a bare array works too
 });
 
 test('layouts saved with on/off migrate: off is never, on is what the card did then', () => {
@@ -115,4 +115,36 @@ test('the settings key accepts only a plain instance id', () => {
   assert.equal(layoutKey('a b'), null);
   assert.equal(layoutKey('x'.repeat(81)), null);
   assert.equal(layoutKey({ toString: () => 'abc' }), null);
+});
+
+test('the default background is the weather photo at full opacity, and old layouts without one get it', () => {
+  assert.deepEqual(DEFAULT_BACKGROUND, { mode: 'weather', color: '#2b6fa8', opacity: 100 });
+  assert.deepEqual(defaultLayout().background, DEFAULT_BACKGROUND);
+  assert.deepEqual(normalizeLayout({ cards: [{ id: 'hero', on: true }] }).background, DEFAULT_BACKGROUND);
+  assert.deepEqual(normalizeBackground(undefined), DEFAULT_BACKGROUND);
+  assert.deepEqual(normalizeBackground('nonsense'), DEFAULT_BACKGROUND);
+});
+
+test('a saved background is kept; an unknown mode is the photo', () => {
+  assert.deepEqual(normalizeBackground({ mode: 'transparent', color: '#12302b', opacity: 0 }), { mode: 'transparent', color: '#12302b', opacity: 0 });
+  assert.equal(normalizeBackground({ mode: 'gradient' }).mode, 'weather');
+  assert.equal(normalizeBackground({ mode: 'COLOR' }).mode, 'weather');
+});
+
+test('an invalid colour falls back to the default; short and upper-case hex are accepted', () => {
+  assert.equal(normalizeBackground({ mode: 'color', color: 'red' }).color, DEFAULT_BACKGROUND.color);
+  assert.equal(normalizeBackground({ mode: 'color', color: '#12345' }).color, DEFAULT_BACKGROUND.color);
+  assert.equal(normalizeBackground({ mode: 'color', color: 'rgb(1,2,3)' }).color, DEFAULT_BACKGROUND.color);
+  assert.equal(normalizeBackground({ mode: 'color', color: '#F1F8F4' }).color, '#f1f8f4');
+  assert.equal(normalizeBackground({ mode: 'color', color: '#abc' }).color, '#aabbcc');
+  assert.equal(normalizeColor(42), null);
+});
+
+test('opacity is clamped to an integer 0-100; anything else is 100', () => {
+  assert.equal(normalizeBackground({ opacity: 250 }).opacity, 100);
+  assert.equal(normalizeBackground({ opacity: -5 }).opacity, 0);
+  assert.equal(normalizeBackground({ opacity: 33.6 }).opacity, 34);
+  assert.equal(normalizeBackground({ opacity: '70' }).opacity, 70);
+  assert.equal(normalizeBackground({ opacity: 'lots' }).opacity, 100);
+  assert.equal(normalizeBackground({ opacity: null }).opacity, 100);
 });

@@ -18,7 +18,7 @@ import { variants } from './variants.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '..', '..');
 const require = createRequire(import.meta.url);
-const { normalizeLayout } = require(path.join(repo, 'lib', 'widget-layout.js'));
+const { normalizeLayout, defaultLayout } = require(path.join(repo, 'lib', 'widget-layout.js'));
 const widgetDir = path.join(repo, 'widgets', 'weather');
 const outDir = path.join(here, 'out');
 fs.mkdirSync(outDir, { recursive: true });
@@ -33,6 +33,15 @@ const themes = opt('themes', 'light,dark').split(',');
 const layoutName = opt('layout', 'default');
 const edit = args.includes('--edit');
 const licence = args.includes('--licence');
+const bgName = opt('background', 'default');
+const BACKGROUNDS = {
+  default: undefined,
+  weather70: { mode: 'weather', color: '#2b6fa8', opacity: 70 },
+  paper: { mode: 'color', color: '#f1f8f4', opacity: 100 },
+  cobalt: { mode: 'color', color: '#2b6fa8', opacity: 100 },
+  'cobalt50': { mode: 'color', color: '#2b6fa8', opacity: 50 },
+  transparent: { mode: 'transparent', color: '#2b6fa8', opacity: 100 },
+};
 const previews = args.includes('--previews');
 
 const always = (ids) => ids.map((id) => ({ id, show: 'always' }));
@@ -99,7 +108,7 @@ async function blankText(page) {
 
 async function shoot(browser, { name, data, settings, width, dark, preview = false, openEdit = false, openLicence = false }) {
   const page = await browser.newPage({ viewport: { width, height: 800 }, deviceScaleFactor: 2 });
-  await page.exposeFunction('__mvNormalize', (body) => normalizeLayout({ cards: body && body.cards }));
+  await page.exposeFunction('__mvNormalize', (body) => normalizeLayout({ cards: body && body.cards, background: body && body.background }));
   await page.addInitScript(mockScript({ settings, data, dark, preview }));
   await page.goto('file://' + path.join(widgetDir, 'public', 'index.html'));
   await page.waitForFunction(() => window.__mvReady === true);
@@ -126,7 +135,7 @@ async function shoot(browser, { name, data, settings, width, dark, preview = fal
 /** A scripted tap-to-move in the edit view: proves the reorder and the PUT round trip. */
 async function dragCheck(browser, data) {
   const page = await browser.newPage({ viewport: { width: 360, height: 800 }, deviceScaleFactor: 1 });
-  await page.exposeFunction('__mvNormalize', (body) => normalizeLayout({ cards: body && body.cards }));
+  await page.exposeFunction('__mvNormalize', (body) => normalizeLayout({ cards: body && body.cards, background: body && body.background }));
   await page.addInitScript(mockScript({ settings: { language: 'es' }, data, dark: false }));
   await page.goto('file://' + path.join(widgetDir, 'public', 'index.html'));
   await page.waitForFunction(() => window.__mvReady === true);
@@ -149,13 +158,20 @@ async function dragCheck(browser, data) {
   const heroStill = await page.$eval('.rows .row[data-id="hero"] .switch', (b) => b.getAttribute('aria-checked'));
   await page.click('.rows .row[data-id="warning"] .seg button[data-show="always"]');
   for (const id of ['hours', 'days']) await page.click(`.rows .row[data-id="${id}"] .switch`);
+  // Background: a light solid colour at 60 % -> the ink scheme must switch on live, and the PUT must carry it.
+  await page.click('.bg-seg button[data-mode="color"]');
+  await page.click('.swatch[data-color="#f1f8f4"]');
+  await page.$eval('.opacity input', (r) => { r.value = '60'; r.dispatchEvent(new Event('input', { bubbles: true })); });
+  const inkWhileEditing = await page.$eval('.sky', (s) => s.classList.contains('ink'));
   await page.click('.btn.primary');
   await page.waitForSelector('.edit-btn');
   const put = await page.evaluate(() => window.__mvPut);
   const haptics = await page.evaluate(() => window.__mvHaptics);
   const shown = await page.$$eval('.wrap > *', (nodes) => nodes.map((n) => n.className.split(' ')[0]));
+  const inkAfterSave = await page.$eval('.sky', (s) => s.classList.contains('ink'));
+  const bgStyle = await page.$eval('.sky > .bg', (b) => b.style.backgroundColor + ' @ ' + b.style.opacity);
   await page.close();
-  return { order, put, haptics, shown, refused, heroStill };
+  return { order, put, haptics, shown, refused, heroStill, inkWhileEditing, inkAfterSave, bgStyle };
 }
 
 const browser = await chromium.launch();
@@ -187,9 +203,10 @@ try {
   } else {
     for (const [variant, base] of Object.entries(all)) {
       if (only.length && !only.includes(variant)) continue;
-      const data = LAYOUTS[layoutName] ? { ...base, layout: LAYOUTS[layoutName] } : base;
+      let data = LAYOUTS[layoutName] ? { ...base, layout: LAYOUTS[layoutName] } : base;
+      if (BACKGROUNDS[bgName]) data = { ...data, layout: { ...(data.layout || defaultLayout()), background: BACKGROUNDS[bgName] } };
       for (const width of widths) for (const theme of themes) {
-        const tag = [variant, layoutName !== 'default' ? layoutName : '', edit ? 'edit' : '', licence ? 'licence' : '', theme, width, language === 'auto' ? lang : language].filter(Boolean).join('-');
+        const tag = [variant, layoutName !== 'default' ? layoutName : '', bgName !== 'default' ? 'bg-' + bgName : '', edit ? 'edit' : '', licence ? 'licence' : '', theme, width, language === 'auto' ? lang : language].filter(Boolean).join('-');
         const r = await shoot(browser, { name: tag, data, settings: { language }, width, dark: theme === 'dark', openEdit: edit, openLicence: licence });
         console.log(tag, r.height + 'px', path.relative(repo, r.file));
       }

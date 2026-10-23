@@ -9,10 +9,10 @@ module.exports = {
     return homey.app.widgetData(query.device, query.instance);
   },
 
-  // The card layout from the widget's edit mode; the app normalizes and
-  // stores it per widget instance, and answers with what it kept.
+  // The card layout and background from the widget's edit mode; the app
+  // normalizes and stores them per widget instance, and answers with what it kept.
   async putLayout({ homey, body }) {
-    const { instanceId, cards } = body || {};
-    return homey.app.saveWidgetLayout(instanceId, cards);
+    const { instanceId, cards, background } = body || {};
+    return homey.app.saveWidgetLayout(instanceId, cards, background);
   },
 };
