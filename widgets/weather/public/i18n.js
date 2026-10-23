@@ -64,7 +64,12 @@
     move_up: 'Subir',
     move_down: 'Bajar',
     drag: 'Mover',
-    at_least_one: 'Deja al menos una tarjeta activa.',
+    at_least_one: 'Deja al menos una tarjeta en «Siempre».',
+    'show.always': 'Siempre',
+    'show.never': 'Nunca',
+    'show.nextHour.auto': 'Si llueve',
+    'show.warning.auto': 'Si hay aviso',
+    no_warnings: 'Sin avisos activos',
     save_failed: 'No se ha podido guardar. Inténtalo de nuevo.',
   };
 
@@ -128,7 +133,12 @@
     move_up: 'Move up',
     move_down: 'Move down',
     drag: 'Move',
-    at_least_one: 'Keep at least one card on.',
+    at_least_one: 'Keep at least one card on “Always”.',
+    'show.always': 'Always',
+    'show.never': 'Never',
+    'show.nextHour.auto': 'If rain',
+    'show.warning.auto': 'If warning',
+    no_warnings: 'No active warnings',
     save_failed: 'Could not save. Please try again.',
   };
 
@@ -192,7 +202,12 @@
     move_up: 'Puja',
     move_down: 'Baixa',
     drag: 'Mou',
-    at_least_one: 'Deixa almenys una targeta activa.',
+    at_least_one: 'Deixa almenys una targeta a «Sempre».',
+    'show.always': 'Sempre',
+    'show.never': 'Mai',
+    'show.nextHour.auto': 'Si plou',
+    'show.warning.auto': 'Si hi ha avís',
+    no_warnings: 'Sense avisos actius',
     save_failed: "No s'ha pogut desar. Torna-ho a provar.",
   };
 
