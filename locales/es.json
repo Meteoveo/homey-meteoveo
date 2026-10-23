@@ -120,7 +120,9 @@
     "ismeretlen": "Sin datos"
   },
   "notifications": {
-    "account_deleted": "Tu cuenta de MeteoVeo se ha eliminado. Ya puedes quitar los dispositivos de MeteoVeo."
+    "account_deleted": "Tu cuenta de MeteoVeo se ha eliminado. Ya puedes quitar los dispositivos de MeteoVeo.",
+    "warning": "Aviso __level__ por __phenomenon__ en __place__, hasta las __until__",
+    "rain": "Lluvia en __place__ dentro de unos __minutes__ min"
   },
   "intensity": {
     "none": "ninguna",
@@ -137,5 +139,10 @@
   },
   "camera": {
     "radar": "Radar"
+  },
+  "levels_lower": {
+    "yellow": "amarillo",
+    "orange": "naranja",
+    "red": "rojo"
   }
 }

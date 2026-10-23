@@ -6,6 +6,9 @@ const { ICON_KEYS, capabilityValues, localDate } = require('../../lib/convert');
 const { initialRainState, nextRainState, rainWithinMinutes, rainIntensityWithin } = require('../../lib/rain');
 const { newWarnings, levelAtLeast, levelTransition, phenomenonActive } = require('../../lib/warnings');
 const { dailyCapabilityValues, dayForecast, precipChance } = require('../../lib/forecast');
+const {
+  comfortCapabilityValues, maxGustWithin, isSunny, tropicalNight, coolerOutside, warningNotice,
+} = require('../../lib/comfort');
 const { buildWuParams, freshReadings, DailyRain } = require('../../lib/wu');
 
 // The contract asks for at most one forecast request per five minutes.
@@ -51,6 +54,7 @@ class MeteoVeoDevice extends Homey.Device {
       await this.setUnavailable(this.homey.__('errors.signed_out'));
       return;
     }
+    this._safe(this._excludeFromClimate());
     this._start();
   }
 
@@ -161,7 +165,9 @@ class MeteoVeoDevice extends Homey.Device {
   }
 
   async _apply(home) {
-    const values = { ...capabilityValues(home, { timezone: this._tz() }), ...dailyCapabilityValues(home) };
+    const values = {
+      ...capabilityValues(home, { timezone: this._tz() }), ...dailyCapabilityValues(home), ...comfortCapabilityValues(home),
+    };
     for (const [capability, value] of Object.entries(values)) {
       // null shows "no value" in Homey — the honest state when the service has
       // no reading; a zero would be a false measurement.
@@ -179,6 +185,9 @@ class MeteoVeoDevice extends Homey.Device {
         await this._trigger(event.type, {
           minutes: event.minutes ?? 0, intensity: this.homey.__(`intensity.${event.band || 'none'}`), radar,
         });
+        if (this.getSetting('notify_rain') === true) {
+          await this._notify(this.homey.__('notifications.rain', { place: this._placeName(), minutes: event.minutes ?? 0 }));
+        }
       } else if (event.type === 'rain_started') {
         await this._trigger(event.type, { radar });
       } else if (event.type === 'rain_ending') {
@@ -198,6 +207,11 @@ class MeteoVeoDevice extends Homey.Device {
         expires: this._when(w.expires),
         radar,
       });
+      const notice = warningNotice(w, this.getSetting('notify_warnings') || 'orange', {
+        levels: { yellow: this.homey.__('levels_lower.yellow'), orange: this.homey.__('levels_lower.orange'), red: this.homey.__('levels_lower.red') },
+        template: this.homey.__('notifications.warning'),
+      }, this._placeName(), this._when(w.expires));
+      if (notice) await this._notify(notice);
     }
 
     // Highest-level transitions: changed / cleared. No history on the first poll.
@@ -225,6 +239,42 @@ class MeteoVeoDevice extends Homey.Device {
     return new Intl.DateTimeFormat('es-ES', {
       day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: this._tz(),
     }).format(date).replace(',', '');
+  }
+
+  _placeName() {
+    const place = this.getStoreValue('place');
+    return (place && place.name) || this.getName();
+  }
+
+  _notify(excerpt) {
+    return this.homey.notifications.createNotification({ excerpt }).catch(this.error);
+  }
+
+  /**
+   * Keep the outdoor temperature out of the zone's climate average (Homey's
+   * system setting `climate_exclude`): a weather device in "Living room"
+   * would otherwise raise the room to 30 °C in August. Done once — the user
+   * may switch it back.
+   */
+  async _excludeFromClimate() {
+    if (this.getStoreValue('climateExcludeDone')) return;
+    try {
+      await this.setSettings({ climate_exclude: true });
+    } catch (direct) {
+      try {
+        const api = await this.homey.app.api();
+        const devices = Object.values(await api.devices.getDevices());
+        const me = devices.find((d) => String(d.driverId || '').startsWith('homey:app:com.meteoveo:')
+          && d.data && d.data.id === this.getData().id);
+        if (!me) throw new Error('device not found in the Web API');
+        await api.devices.setDeviceSettings({ id: me.id, settings: { climate_exclude: true } });
+      } catch (viaApi) {
+        this.error('climate exclusion failed:', direct && direct.message, '/', viaApi && viaApi.message);
+        return;
+      }
+    }
+    this.log('climate exclusion set');
+    await this.setStoreValue('climateExcludeDone', true);
   }
 
   _trigger(cardId, tokens) {
@@ -270,6 +320,37 @@ class MeteoVeoDevice extends Homey.Device {
     const chance = precipChance(await this._ensureHome(), day);
     if (chance === null) throw new Error(this.homey.__('errors.no_forecast'));
     return chance > percent;
+  }
+
+  async gustWithin(speedKmh, hours) {
+    const gust = maxGustWithin(await this._ensureHome(), hours, Date.now());
+    if (gust === null) throw new Error(this.homey.__('errors.no_forecast'));
+    return gust > speedKmh;
+  }
+
+  async sunnyNow() {
+    const sunny = isSunny(await this._ensureHome());
+    if (sunny === null) throw new Error(this.homey.__('errors.no_forecast'));
+    return sunny;
+  }
+
+  async maxAbove(day, tempC) {
+    const home = await this._ensureHome();
+    const d = ((home && home.daily) || [])[day];
+    if (!d || typeof d.tempMaxC !== 'number') throw new Error(this.homey.__('errors.no_forecast'));
+    return d.tempMaxC > tempC;
+  }
+
+  async tropicalNightTonight() {
+    const answer = tropicalNight(await this._ensureHome(), Date.now(), this._tz());
+    if (answer === null) throw new Error(this.homey.__('errors.no_forecast'));
+    return answer;
+  }
+
+  async coolerOutsideThan(indoorC, margin) {
+    const answer = coolerOutside(await this._ensureHome(), Number(indoorC), Number(margin));
+    if (answer === null) throw new Error(this.homey.__('errors.no_forecast'));
+    return answer;
   }
 
   async forecastTokens(day) {

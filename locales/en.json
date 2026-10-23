@@ -120,7 +120,9 @@
     "ismeretlen": "No data"
   },
   "notifications": {
-    "account_deleted": "Your MeteoVeo account was deleted. You can now remove the MeteoVeo devices."
+    "account_deleted": "Your MeteoVeo account was deleted. You can now remove the MeteoVeo devices.",
+    "warning": "__level__ warning for __phenomenon__ in __place__, until __until__",
+    "rain": "Rain in __place__ in about __minutes__ min"
   },
   "intensity": {
     "none": "none",
@@ -137,5 +139,10 @@
   },
   "camera": {
     "radar": "Radar"
+  },
+  "levels_lower": {
+    "yellow": "Yellow",
+    "orange": "Orange",
+    "red": "Red"
   }
 }
