@@ -1,3 +1,4 @@
+<div id="mv-station">
 <header class="homey-header">
   <h1 class="homey-title" data-i18n="pair.station.title"></h1>
   <p class="homey-subtitle" data-i18n="pair.station.subtitle"></p>
@@ -34,85 +35,91 @@
 
   <button class="homey-button-primary-full" id="submit" data-i18n="pair.finish"></button>
 </form>
+</div>
 
 <style>.mv-hint { font-size: 13px; opacity: .7; margin: 6px 0 16px; }</style>
 
 <script type="text/javascript">
-  const t = (key) => Homey.__(key);
-  document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
-  const have = () => document.querySelector('input[name="have"]:checked').value;
-  let candidates = null;
+  // Each view in its own scope, and every lookup inside its own root: the
+  // pairing dialog may keep earlier views in the same page.
+  (function () {
+    const root = document.getElementById('mv-station');
+    const t = (key) => Homey.__(key);
+    root.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
+    const have = () => root.querySelector('input[name="have"]:checked').value;
+    let candidates = null;
 
-  function explain(err) {
-    const key = 'errors.' + (err && err.message);
-    const text = t(key);
-    Homey.alert(text && text !== key ? text : t('errors.unknown'), 'error');
-  }
-
-  async function renderSources() {
-    const box = document.getElementById('sources');
-    box.textContent = '';
-    if (have() !== 'devices') return;
-    if (!candidates) {
-      Homey.showLoadingOverlay();
-      try { candidates = await Homey.emit('station_candidates'); } catch (err) { explain(err); return; } finally { Homey.hideLoadingOverlay(); }
+    function explain(err) {
+      const key = 'errors.' + (err && err.message);
+      const text = t(key);
+      Homey.alert(text && text !== key ? text : t('errors.unknown'), 'error');
     }
-    for (const [measurement, list] of Object.entries(candidates)) {
-      const group = document.createElement('div');
-      group.className = 'homey-form-group';
-      const label = document.createElement('label');
-      label.className = 'homey-form-label';
-      label.htmlFor = 'src-' + measurement;
-      label.textContent = t('measurements.' + measurement);
-      const select = document.createElement('select');
-      select.className = 'homey-form-select';
-      select.id = 'src-' + measurement;
-      select.dataset.measurement = measurement;
-      select.add(new Option(t('pair.station.none'), ''));
-      for (const c of list) {
-        const where = c.zone ? ' · ' + c.zone : '';
-        const now = c.value === null ? '' : ' (' + c.value + ' ' + c.units + ')';
-        select.add(new Option(c.name + where + now, JSON.stringify({ deviceId: c.deviceId, capability: c.capability })));
+
+    async function renderSources() {
+      const box = root.querySelector('#sources');
+      box.textContent = '';
+      if (have() !== 'devices') return;
+      if (!candidates) {
+        Homey.showLoadingOverlay();
+        try { candidates = await Homey.emit('station_candidates'); } catch (err) { explain(err); return; } finally { Homey.hideLoadingOverlay(); }
       }
-      group.append(label, select);
-      box.append(group);
+      for (const [measurement, list] of Object.entries(candidates)) {
+        const group = document.createElement('div');
+        group.className = 'homey-form-group';
+        const label = document.createElement('label');
+        label.className = 'homey-form-label';
+        label.htmlFor = 'src-' + measurement;
+        label.textContent = t('measurements.' + measurement);
+        const select = document.createElement('select');
+        select.className = 'homey-form-select';
+        select.id = 'src-' + measurement;
+        select.dataset.measurement = measurement;
+        select.add(new Option(t('pair.station.none'), ''));
+        for (const c of list) {
+          const where = c.zone ? ' · ' + c.zone : '';
+          const now = c.value === null ? '' : ' (' + c.value + ' ' + c.units + ')';
+          select.add(new Option(c.name + where + now, JSON.stringify({ deviceId: c.deviceId, capability: c.capability })));
+        }
+        group.append(label, select);
+        box.append(group);
+      }
     }
-  }
 
-  function render() {
-    const mode = have();
-    document.getElementById('station').style.display = mode === 'no' ? 'none' : '';
-    document.getElementById('flow-hint').style.display = mode === 'flow' ? '' : 'none';
-    renderSources();
-  }
-  document.querySelectorAll('input[name="have"]').forEach((el) => el.addEventListener('change', render));
+    function render() {
+      const mode = have();
+      root.querySelector('#station').style.display = mode === 'no' ? 'none' : '';
+      root.querySelector('#flow-hint').style.display = mode === 'flow' ? '' : 'none';
+      renderSources();
+    }
+    root.querySelectorAll('input[name="have"]').forEach((el) => el.addEventListener('change', render));
 
-  let busy = false;
-  document.querySelector('form').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    if (busy) return;
-    busy = true;
-    try { await submit(); } finally { busy = false; }
-  });
-  async function submit() {
-    const mode = have();
-    let station = null;
-    if (mode !== 'no') {
-      const sources = {};
-      document.querySelectorAll('#sources select').forEach((s) => { if (s.value) sources[s.dataset.measurement] = JSON.parse(s.value); });
-      if (mode === 'devices' && !Object.keys(sources).length) { Homey.alert(t('errors.no_sources'), 'error'); return; }
-      station = { mode, sensorHeightCm: Number(document.getElementById('height').value), sources };
+    let busy = false;
+    root.querySelector('form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (busy) return;
+      busy = true;
+      try { await submit(); } finally { busy = false; }
+    });
+    async function submit() {
+      const mode = have();
+      let station = null;
+      if (mode !== 'no') {
+        const sources = {};
+        root.querySelectorAll('#sources select').forEach((s) => { if (s.value) sources[s.dataset.measurement] = JSON.parse(s.value); });
+        if (mode === 'devices' && !Object.keys(sources).length) { Homey.alert(t('errors.no_sources'), 'error'); return; }
+        station = { mode, sensorHeightCm: Number(root.querySelector('#height').value), sources };
+      }
+      Homey.showLoadingOverlay();
+      try {
+        await Homey.emit('set_station', { station });
+        const device = await Homey.emit('finish', {});
+        await Homey.createDevice(device);
+        Homey.done();
+      } catch (err) {
+        explain(err);
+      } finally {
+        Homey.hideLoadingOverlay();
+      }
     }
-    Homey.showLoadingOverlay();
-    try {
-      await Homey.emit('set_station', { station });
-      const device = await Homey.emit('finish', {});
-      await Homey.createDevice(device);
-      Homey.done();
-    } catch (err) {
-      explain(err);
-    } finally {
-      Homey.hideLoadingOverlay();
-    }
-  }
+  })();
 </script>
