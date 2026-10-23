@@ -22,7 +22,7 @@
       "title": "Revisa tu correo",
       "subtitle": "Te hemos enviado un código de 6 cifras.",
       "code": "Código",
-      "hint": "¿No te ha llegado? Mira en la carpeta de spam; el código vale 15 minutos."
+      "hint": "¿No te ha llegado? Mira en la carpeta de spam; el código vale 24 horas."
     },
     "location": {
       "title": "¿Dónde está tu casa?",
