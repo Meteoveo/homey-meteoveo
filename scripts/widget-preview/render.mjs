@@ -108,7 +108,7 @@ async function shoot(browser, { name, data, settings, width, dark, preview = fal
   return { file, height };
 }
 
-/** A scripted drag in the edit view: proves the pointer-event reorder and the PUT round trip. */
+/** A scripted tap-to-move in the edit view: proves the reorder and the PUT round trip. */
 async function dragCheck(browser, data) {
   const page = await browser.newPage({ viewport: { width: 360, height: 800 }, deviceScaleFactor: 1 });
   await page.exposeFunction('__mvNormalize', (body) => normalizeLayout({ cards: body && body.cards }));
@@ -117,13 +117,9 @@ async function dragCheck(browser, data) {
   await page.waitForFunction(() => window.__mvReady === true);
   await page.click('.edit-btn');
   await page.waitForSelector('.rows .row');
-  const handles = await page.$$('.rows .row .handle');
-  const first = await handles[0].boundingBox();
-  const fourth = await (await page.$$('.rows .row'))[3].boundingBox();
-  await page.mouse.move(first.x + first.width / 2, first.y + first.height / 2);
-  await page.mouse.down();
-  for (let i = 1; i <= 12; i++) await page.mouse.move(first.x + first.width / 2, first.y + ((fourth.y + fourth.height * 0.7 - first.y) * i) / 12);
-  await page.mouse.up();
+  // Tap to pick up the first card, tap the fourth row to place it there.
+  await page.click('.rows .row:nth-child(1) .handle');
+  await page.click('.rows .row:nth-child(4) .name');
   const order = await page.$$eval('.rows .row', (rows) => rows.map((r) => r.dataset.id));
   await page.click('.rows .row:nth-child(2) .switch');
   await page.click('.btn.primary');
