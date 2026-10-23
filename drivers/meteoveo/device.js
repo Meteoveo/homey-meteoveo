@@ -10,6 +10,7 @@ const {
   comfortCapabilityValues, maxGustWithin, isSunny, tropicalNight, coolerOutside, warningNotice,
 } = require('../../lib/comfort');
 const { buildWuParams, freshReadings, DailyRain } = require('../../lib/wu');
+const { OUTDOOR } = require('../../lib/station-detect');
 
 // The contract asks for at most one forecast request per five minutes.
 const POLL_MS = 5 * 60_000;
@@ -54,7 +55,7 @@ class MeteoVeoDevice extends Homey.Device {
       await this.setUnavailable(this.homey.__('errors.signed_out'));
       return;
     }
-    this._safe(this._excludeFromClimate());
+    this._safe(this._climateAdvice());
     this._start();
   }
 
@@ -251,33 +252,27 @@ class MeteoVeoDevice extends Homey.Device {
   }
 
   /**
-   * Keep the outdoor temperature out of the zone's climate average (Homey's
-   * system setting `climate_exclude`): a weather device in "Living room"
-   * would otherwise raise the room to 30 °C in August. Done once — the user
-   * may switch it back.
+   * The zone's climate (Homey's room temperature) averages every thermometer
+   * in it, ours included, unless the device is excluded. Apps may not change
+   * that system setting (the Web API answers "Missing Scopes"), so once per
+   * device we tell the user how to, when the device sits in an indoor zone.
    */
-  async _excludeFromClimate() {
-    if (this.getStoreValue('climateExcludeVerified')) return;
-    // A system setting: the device's own setSettings() ignores it silently
-    // (seen on the owner's Pro, 2026-10-23), so it goes through the Web API and
-    // counts as done only when it reads back true.
+  async _climateAdvice() {
+    if (this.getStoreValue('climateAdviceDone')) return;
     try {
       const api = await this.homey.app.api();
-      const find = async () => Object.values(await api.devices.getDevices()).find((d) => String(d.driverId || '')
+      const me = Object.values(await api.devices.getDevices()).find((d) => String(d.driverId || '')
         .startsWith('homey:app:com.meteoveo:') && d.data && d.data.id === this.getData().id);
-      const me = await find();
-      if (!me) throw new Error('device not found in the Web API');
-      if (!(me.settings && me.settings.climate_exclude === true)) {
-        await api.devices.setDeviceSettings({ id: me.id, settings: { climate_exclude: true } });
+      if (!me) return;
+      const zone = (await api.zones.getZones())[me.zone];
+      const excluded = me.settings && me.settings.climate_exclude === true;
+      if (!excluded && zone && !OUTDOOR.test(zone.name)) {
+        await this._notify(this.homey.__('notifications.climate', { device: this.getName(), zone: zone.name }));
       }
-      const check = await find();
-      if (!(check && check.settings && check.settings.climate_exclude === true)) throw new Error('did not stick');
+      await this.setStoreValue('climateAdviceDone', true);
     } catch (err) {
-      this.error('climate exclusion failed:', err && err.message);
-      return;
+      this.error('climate advice skipped:', err && err.message);
     }
-    this.log('climate exclusion set and verified');
-    await this.setStoreValue('climateExcludeVerified', true);
   }
 
   _trigger(cardId, tokens) {
