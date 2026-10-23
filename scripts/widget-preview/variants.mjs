@@ -15,20 +15,37 @@ function retime(data, nowMs) {
   const issued = nowMs - 2 * 60000;
   d.issuedAt = iso(nowMs - 60000);
   d.current.at = iso(nowMs - 3 * 60000);
+  const hour = Math.floor(nowMs / 3600000) * 3600000;
+  d.hourly = d.hourly.map((h, i) => ({ ...h, at: iso(hour + i * 3600000) }));
   if (d.nextHour) {
     d.nextHour.issuedAt = iso(issued);
     d.nextHour.ageMinutes = 2;
-    d.nextHour.steps = d.nextHour.steps.map((s, i) => ({ ...s, at: iso(issued + i * 600000), leadMinutes: i * 10 }));
+    // The 0-3 h fields per step (contract 2026-10-23): interpolated from the hour the step falls in.
+    d.nextHour.steps = d.nextHour.steps.map((s, i) => {
+      const at = issued + i * 600000;
+      const k = Math.max(0, Math.min(d.hourly.length - 2, Math.floor((at - hour) / 3600000)));
+      const f = Math.max(0, Math.min(1, (at - (hour + k * 3600000)) / 3600000));
+      const a = d.hourly[k]; const b = d.hourly[k + 1];
+      const mix = (p, q) => (p === null || q === null ? null : Math.round((p + (q - p) * f) * 10) / 10);
+      return {
+        ...s, at: iso(at), leadMinutes: i * 10,
+        tempC: mix(a.tempC, b.tempC), humidityPct: Math.round(mix(a.humidityPct, b.humidityPct)),
+        windMs: mix(a.windMs, b.windMs), gustMs: mix(a.gustMs, b.gustMs),
+        windBearingDeg: (200 + i * 4) % 360, condition: a.condition, iconKey: a.iconKey, isDaylight: a.isDaylight,
+      };
+    });
   }
-  const hour = Math.floor(nowMs / 3600000) * 3600000;
-  d.hourly = d.hourly.map((h, i) => ({ ...h, at: iso(hour + i * 3600000) }));
   const day = new Date(nowMs); day.setUTCHours(12, 0, 0, 0);
   d.daily = d.daily.map((x, i) => ({ ...x, date: iso(day.getTime() + i * 86400000).slice(0, 10) }));
   return d;
 }
 
 function bands(d, fn) {
-  d.nextHour.steps = d.nextHour.steps.map((s, i) => ({ ...s, band: fn(i, s) }));
+  d.nextHour.steps = d.nextHour.steps.map((s, i) => {
+    const band = fn(i, s);
+    // The icon stays the hour's AEMET icon (ADR-0607 D1); only the temperature dips under rain.
+    return { ...s, band, tempC: s.tempC === null ? null : Math.round((s.tempC - (band === 'none' ? 0 : 1.5)) * 10) / 10 };
+  });
   const first = d.nextHour.steps.findIndex((s) => s.band !== 'none');
   d.nextHour.rainNow = d.nextHour.steps[0].band !== 'none';
   d.nextHour.rainSoon = d.nextHour.steps.slice(0, 7).some((s) => s.band !== 'none');
