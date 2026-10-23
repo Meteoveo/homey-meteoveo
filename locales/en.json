@@ -22,7 +22,7 @@
       "title": "Check your e-mail",
       "subtitle": "We sent you a 6-digit code.",
       "code": "Code",
-      "hint": "Nothing arrived? Look in the spam folder; the code is valid for 15 minutes."
+      "hint": "Nothing arrived? Look in the spam folder; the code is valid for 24 hours."
     },
     "location": {
       "title": "Where is home?",
