@@ -5,20 +5,45 @@
 </header>
 
 <form class="homey-form">
-  <div class="homey-form-group">
-    <label class="homey-form-label" for="lat" data-i18n="pair.location.lat"></label>
-    <input class="homey-form-input" id="lat" type="number" step="0.01" min="27" max="44.5" />
+  <div class="homey-form-group mv-search">
+    <label class="homey-form-label" for="q" data-i18n="pair.location.search"></label>
+    <input class="homey-form-input" id="q" type="search" autocomplete="off" autocorrect="off" spellcheck="false" />
+    <ul class="mv-results" id="results"></ul>
   </div>
-  <div class="homey-form-group">
-    <label class="homey-form-label" for="lon" data-i18n="pair.location.lon"></label>
-    <input class="homey-form-input" id="lon" type="number" step="0.01" min="-18.5" max="4.6" />
-  </div>
+
+  <div class="mv-map" id="map"></div>
+  <p class="mv-hint" id="map-hint" data-i18n="pair.location.map_hint"></p>
+  <button type="button" class="mv-link" id="here" data-i18n="pair.location.use_homey"></button>
+
+  <details class="mv-coords" id="coords">
+    <summary data-i18n="pair.location.coords"></summary>
+    <div class="homey-form-group">
+      <label class="homey-form-label" for="lat" data-i18n="pair.location.lat"></label>
+      <input class="homey-form-input" id="lat" type="number" step="0.0001" min="27" max="44.5" />
+    </div>
+    <div class="homey-form-group">
+      <label class="homey-form-label" for="lon" data-i18n="pair.location.lon"></label>
+      <input class="homey-form-input" id="lon" type="number" step="0.0001" min="-18.5" max="4.6" />
+    </div>
+  </details>
   <p class="mv-hint" data-i18n="pair.location.hint"></p>
   <button class="homey-button-primary-full" id="submit" data-i18n="pair.continue"></button>
 </form>
 </div>
 
-<style>.mv-hint { font-size: 13px; opacity: .7; margin: 6px 0 16px; }</style>
+<style>
+  #mv-location .mv-hint { font-size: 13px; opacity: .7; margin: 6px 0 12px; }
+  #mv-location .mv-search { position: relative; }
+  #mv-location .mv-results { list-style: none; margin: 4px 0 0; padding: 0; border-radius: 8px; overflow: hidden; }
+  #mv-location .mv-results:empty { display: none; }
+  #mv-location .mv-results li { padding: 10px 12px; border-bottom: 1px solid rgba(0, 0, 0, .08); cursor: pointer; background: rgba(43, 111, 168, .06); }
+  #mv-location .mv-results li small { opacity: .65; margin-left: 6px; }
+  #mv-location .mv-map { height: 260px; border-radius: 12px; overflow: hidden; margin: 8px 0 0; background: #e7eee9; }
+  #mv-location .mv-map.mv-off { display: none; }
+  #mv-location .mv-link { background: none; border: 0; padding: 4px 0 12px; color: #2b6fa8; font: inherit; text-decoration: underline; cursor: pointer; }
+  #mv-location .mv-coords { margin: 0 0 8px; }
+  #mv-location .mv-coords summary { cursor: pointer; opacity: .75; padding: 4px 0; }
+</style>
 
 <script type="text/javascript">
   // Each view in its own scope, and every lookup inside its own root: the
@@ -27,11 +52,141 @@
     const root = document.getElementById('mv-location');
     const t = (key) => Homey.__(key);
     root.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
+
+    // The same map as meteoveo.com: MapLibre with the OpenFreeMap "liberty" style.
+    const MAPLIBRE = 'https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.24.0/maplibre-gl';
+    const STYLE = 'https://tiles.openfreemap.org/styles/liberty';
+    const MADRID = { lat: 40.4168, lon: -3.7038 };
+    const lat = root.querySelector('#lat');
+    const lon = root.querySelector('#lon');
+    let map = null;
+    let marker = null;
+    let homey = null;
+
+    function explain(err) {
+      const key = 'errors.' + (err && err.message);
+      const text = t(key);
+      Homey.alert(text && text !== key ? text : t('errors.unknown'), 'error');
+    }
+
+    function setPosition(position, fly) {
+      lat.value = Number(position.lat).toFixed(4);
+      lon.value = Number(position.lon).toFixed(4);
+      if (marker) marker.setLngLat([position.lon, position.lat]);
+      if (map && fly) map.flyTo({ center: [position.lon, position.lat], zoom: 13 });
+    }
+
+    function loadMapLibre() {
+      if (window.maplibregl) return Promise.resolve(window.maplibregl);
+      return new Promise((resolve, reject) => {
+        const css = document.createElement('link');
+        css.rel = 'stylesheet';
+        css.href = MAPLIBRE + '.css';
+        document.head.appendChild(css);
+        const script = document.createElement('script');
+        script.src = MAPLIBRE + '.js';
+        script.onload = () => (window.maplibregl ? resolve(window.maplibregl) : reject(new Error('no maplibre')));
+        script.onerror = () => reject(new Error('maplibre unavailable'));
+        document.head.appendChild(script);
+        setTimeout(() => reject(new Error('maplibre timeout')), 10000);
+      });
+    }
+
+    function noMap() {
+      // Offline, blocked or no WebGL: the coordinates are the way in.
+      root.querySelector('#map').classList.add('mv-off');
+      root.querySelector('#map-hint').style.display = 'none';
+      root.querySelector('#coords').open = true;
+    }
+
+    async function startMap(center) {
+      try {
+        const maplibregl = await loadMapLibre();
+        map = new maplibregl.Map({
+          container: root.querySelector('#map'),
+          style: STYLE,
+          center: [center.lon, center.lat],
+          zoom: 13,
+          attributionControl: { compact: true },
+        });
+        marker = new maplibregl.Marker({ color: '#2b6fa8', draggable: true }).setLngLat([center.lon, center.lat]).addTo(map);
+        marker.on('dragend', () => { const p = marker.getLngLat(); setPosition({ lat: p.lat, lon: p.lng }, false); });
+        map.on('click', (event) => setPosition({ lat: event.lngLat.lat, lon: event.lngLat.lng }, false));
+        map.on('error', () => {});
+      } catch (err) {
+        noMap();
+      }
+    }
+
+    // Coordinates typed by hand move the marker too.
+    for (const input of [lat, lon]) {
+      input.addEventListener('change', () => {
+        if (lat.value && lon.value) setPosition({ lat: Number(lat.value), lon: Number(lon.value) }, true);
+      });
+    }
+
+    root.querySelector('#here').addEventListener('click', () => {
+      if (homey) setPosition(homey, true);
+    });
+
+    // Settlement search through the app (the account token opens it; the view never calls out itself).
+    const q = root.querySelector('#q');
+    const results = root.querySelector('#results');
+    let searchTimer = null;
+    let lastItems = [];
+    function choose(item) {
+      results.textContent = '';
+      q.value = item.name;
+      setPosition({ lat: item.lat, lon: item.lon }, true);
+    }
+    async function search() {
+      const query = q.value.trim();
+      if (query.length < 2) { results.textContent = ''; lastItems = []; return; }
+      try {
+        const items = await Homey.emit('search_places', { q: query });
+        if (q.value.trim() !== query) return;
+        lastItems = items || [];
+        results.textContent = '';
+        if (!lastItems.length) {
+          const li = document.createElement('li');
+          li.textContent = t('pair.location.search_none');
+          results.appendChild(li);
+          return;
+        }
+        for (const item of lastItems) {
+          const li = document.createElement('li');
+          li.textContent = item.name;
+          if (item.admin1) {
+            const small = document.createElement('small');
+            small.textContent = item.admin1;
+            li.appendChild(small);
+          }
+          li.addEventListener('click', () => choose(item));
+          results.appendChild(li);
+        }
+      } catch (err) {
+        explain(err);
+      }
+    }
+    q.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(search, 300); });
+    q.addEventListener('keydown', (event) => {
+      // Enter in the search box picks the first hit; it must not submit the step.
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      if (lastItems[0]) choose(lastItems[0]);
+    });
+
     Homey.emit('homey_location').then((here) => {
-      if (!here) return;
-      root.querySelector('#lat').value = Number(here.lat).toFixed(2);
-      root.querySelector('#lon').value = Number(here.lon).toFixed(2);
-    }).catch(() => {});
+      homey = here && Number.isFinite(Number(here.lat)) ? { lat: Number(here.lat), lon: Number(here.lon) } : null;
+      const start = homey || MADRID;
+      setPosition(start, false);
+      if (!homey) root.querySelector('#here').style.display = 'none';
+      startMap(start);
+    }).catch(() => {
+      root.querySelector('#here').style.display = 'none';
+      setPosition(MADRID, false);
+      startMap(MADRID);
+    });
 
     let busy = false;
     root.querySelector('form').addEventListener('submit', async (event) => {
@@ -42,15 +197,10 @@
     });
     async function submit() {
       try {
-        await Homey.emit('set_location', {
-          lat: root.querySelector('#lat').value,
-          lon: root.querySelector('#lon').value,
-        });
+        await Homey.emit('set_location', { lat: lat.value, lon: lon.value });
         Homey.showView('station');
       } catch (err) {
-        const key = 'errors.' + (err && err.message);
-        const text = t(key);
-        Homey.alert(text && text !== key ? text : t('errors.unknown'), 'error');
+        explain(err);
       }
     }
   })();

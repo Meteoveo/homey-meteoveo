@@ -133,3 +133,11 @@ test('station creation sends no vendor: it names the hardware maker, not the hub
   assert.deepEqual(station, { stationId: 7, ingestId: 'ING', secret: 'S' });
   assert.deepEqual(JSON.parse(fetch.calls[0].init.body), { name: 'Casa', lat: 38.9, lon: -0.26, sensorHeightCm: 150 });
 });
+
+test('settlement search uses the account token and asks for a short list', async () => {
+  const fetch = fakeFetch([{ status: 200, body: { items: [{ name: 'Almiserà', lat: 38.92, lon: -0.27, admin1: 'Valencia' }] } }]);
+  const items = await client(fetch).searchSettlements('jwt', 'almi');
+  assert.equal(items.length, 1);
+  assert.equal(fetch.calls[0].url, `${API_BASE}/v1/settlements/search?q=almi&limit=8`);
+  assert.equal(fetch.calls[0].init.headers.Authorization, 'Bearer jwt');
+});
