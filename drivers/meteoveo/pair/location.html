@@ -156,7 +156,8 @@
         for (const item of lastItems) {
           const li = document.createElement('li');
           li.textContent = item.name;
-          if (item.admin1) {
+          // admin1 is a GeoNames code for some regions ("60"): shown only when it reads as a name.
+          if (item.admin1 && !/^\d+$/.test(item.admin1)) {
             const small = document.createElement('small');
             small.textContent = item.admin1;
             li.appendChild(small);
