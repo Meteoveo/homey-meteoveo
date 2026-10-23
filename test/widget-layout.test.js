@@ -9,7 +9,7 @@ const ids = (layout) => layout.cards.map((c) => c.id);
 const showOf = (layout, id) => layout.cards.find((c) => c.id === id).show;
 
 test('the default layout is every card in the full order; warning auto, the rest always', () => {
-  assert.deepEqual(ids(defaultLayout()), ['warning', 'hero', 'metrics', 'nextHour', 'hours', 'days']);
+  assert.deepEqual(ids(defaultLayout()), ['warning', 'hero', 'metrics', 'nextHour', 'nowcast3h', 'hours', 'days']);
   assert.equal(showOf(defaultLayout(), 'warning'), 'auto');
   for (const id of CARD_IDS.filter((x) => x !== 'warning')) assert.equal(showOf(defaultLayout(), id), 'always');
   assert.deepEqual(normalizeLayout(undefined), defaultLayout());
@@ -18,14 +18,15 @@ test('the default layout is every card in the full order; warning auto, the rest
   assert.deepEqual(normalizeLayout({ cards: 'nonsense' }), defaultLayout());
 });
 
-test('only warning and nextHour are conditional', () => {
-  assert.deepEqual(CARD_IDS.filter(isConditional), ['warning', 'nextHour']);
+test('warning, nextHour and nowcast3h are the conditional cards', () => {
+  assert.deepEqual(CARD_IDS.filter(isConditional), ['warning', 'nextHour', 'nowcast3h']);
   assert.equal(isConditional('radar'), false);
   assert.equal(CARDS.nextHour.default, 'always');
+  assert.equal(CARDS.nowcast3h.default, 'always');
 });
 
 test('a saved order and the three states are kept', () => {
-  const saved = { cards: [{ id: 'days', show: 'always' }, { id: 'hero', show: 'always' }, { id: 'nextHour', show: 'auto' },
+  const saved = { cards: [{ id: 'days', show: 'always' }, { id: 'hero', show: 'always' }, { id: 'nextHour', show: 'auto' }, { id: 'nowcast3h', show: 'never' },
     { id: 'warning', show: 'never' }, { id: 'metrics', show: 'never' }, { id: 'hours', show: 'always' }] };
   assert.deepEqual(normalizeLayout(saved), saved);
   assert.deepEqual(normalizeLayout(saved.cards), saved); // a bare array works too
@@ -35,23 +36,25 @@ test('layouts saved with on/off migrate: off is never, on is what the card did t
   const old = { cards: [{ id: 'days', on: true }, { id: 'hero', on: true }, { id: 'nextHour', on: false },
     { id: 'warning', on: true }, { id: 'metrics', on: false }, { id: 'hours', on: true }] };
   const out = normalizeLayout(old);
-  assert.deepEqual(ids(out), ['days', 'hero', 'nextHour', 'warning', 'metrics', 'hours']);
+  // The card that did not exist yet sits next to its neighbour, not at the end.
+  assert.deepEqual(ids(out), ['days', 'hero', 'nextHour', 'nowcast3h', 'warning', 'metrics', 'hours']);
+  assert.equal(showOf(out, 'nowcast3h'), 'always');
   assert.equal(showOf(out, 'days'), 'always');
   assert.equal(showOf(out, 'nextHour'), 'never');
   assert.equal(showOf(out, 'metrics'), 'never');
   // The band appeared only with a warning before: 'on' keeps that, it does not become a permanent band.
   assert.equal(showOf(out, 'warning'), 'auto');
-  assert.equal(normalizeLayout({ cards: [{ id: 'warning', on: false }] }).cards[0].show, 'never');
-  assert.equal(normalizeLayout({ cards: [{ id: 'nextHour', on: true }] }).cards[0].show, 'always');
+  assert.equal(showOf(normalizeLayout({ cards: [{ id: 'warning', on: false }] }), 'warning'), 'never');
+  assert.equal(showOf(normalizeLayout({ cards: [{ id: 'nextHour', on: true }] }), 'nextHour'), 'always');
   for (const c of out.cards) assert.equal('on' in c, false);
 });
 
 test('`show` wins over a stray `on`, and an invalid `show` falls back to the card default', () => {
-  assert.equal(normalizeLayout({ cards: [{ id: 'hours', show: 'never', on: true }] }).cards[0].show, 'never');
-  assert.equal(normalizeLayout({ cards: [{ id: 'hours', show: 'sometimes' }] }).cards[0].show, 'always');
-  assert.equal(normalizeLayout({ cards: [{ id: 'warning', show: 42 }] }).cards[0].show, 'auto');
-  assert.equal(normalizeLayout({ cards: [{ id: 'nextHour', show: null }] }).cards[0].show, 'always');
-  assert.equal(normalizeLayout({ cards: [{ id: 'days' }] }).cards[0].show, 'always');
+  assert.equal(showOf(normalizeLayout({ cards: [{ id: 'hours', show: 'never', on: true }] }), 'hours'), 'never');
+  assert.equal(showOf(normalizeLayout({ cards: [{ id: 'hours', show: 'sometimes' }] }), 'hours'), 'always');
+  assert.equal(showOf(normalizeLayout({ cards: [{ id: 'warning', show: 42 }] }), 'warning'), 'auto');
+  assert.equal(showOf(normalizeLayout({ cards: [{ id: 'nextHour', show: null }] }), 'nextHour'), 'always');
+  assert.equal(showOf(normalizeLayout({ cards: [{ id: 'days' }] }), 'days'), 'always');
 });
 
 test('`auto` is only kept on conditional cards; elsewhere it reads as always', () => {
@@ -64,22 +67,32 @@ test('`auto` is only kept on conditional cards; elsewhere it reads as always', (
 
 test('unknown ids are dropped and duplicates removed, the first occurrence winning', () => {
   const out = normalizeLayout({ cards: [{ id: 'days', show: 'never' }, { id: 'radar', show: 'always' }, { id: 'days', show: 'always' }, { id: 'hero' }, 42, null, { id: 7 }] });
-  assert.deepEqual(ids(out), ['days', 'hero', 'warning', 'metrics', 'nextHour', 'hours']);
-  assert.equal(out.cards[0].show, 'never');
-  assert.equal(out.cards[1].show, 'always');
+  // Nothing precedes the missing warning: it goes to the start.
+  assert.deepEqual(ids(out), ['warning', 'days', 'hero', 'metrics', 'nextHour', 'nowcast3h', 'hours']);
+  assert.equal(showOf(out, 'days'), 'never');
+  assert.equal(showOf(out, 'hero'), 'always');
 });
 
-test('ids missing from a saved layout are appended in default order with their default', () => {
-  const out = normalizeLayout({ cards: [{ id: 'hours', show: 'always' }] });
-  assert.deepEqual(ids(out), ['hours', 'warning', 'hero', 'metrics', 'nextHour', 'days']);
-  assert.equal(showOf(out, 'warning'), 'auto');
-  assert.ok(out.cards.filter((c) => c.id !== 'warning').every((c) => c.show === 'always'));
+test('a missing card is inserted after its preceding default neighbour that is present', () => {
+  // The owner's case: a layout saved before nowcast3h existed, with its own order.
+  const out = normalizeLayout({ cards: [{ id: 'days', show: 'always' }, { id: 'nextHour', show: 'always' }, { id: 'hero', show: 'always' },
+    { id: 'warning', show: 'auto' }, { id: 'metrics', show: 'never' }, { id: 'hours', show: 'always' }] });
+  assert.deepEqual(ids(out), ['days', 'nextHour', 'nowcast3h', 'hero', 'warning', 'metrics', 'hours']);
+  assert.equal(showOf(out, 'nowcast3h'), 'always');
+  // Its neighbour missing too: the nearest earlier default card that is present (metrics) is the anchor.
+  const noNext = normalizeLayout({ cards: [{ id: 'days', show: 'always' }, { id: 'metrics', show: 'always' }, { id: 'hours', show: 'always' }] });
+  assert.deepEqual(ids(noNext), ['warning', 'hero', 'days', 'metrics', 'nextHour', 'nowcast3h', 'hours']);
+  // Nothing before it present: the start.
+  const onlyLast = normalizeLayout({ cards: [{ id: 'days', show: 'always' }] });
+  assert.deepEqual(ids(onlyLast), ['warning', 'hero', 'metrics', 'nextHour', 'nowcast3h', 'hours', 'days']);
+  assert.equal(showOf(onlyLast, 'warning'), 'auto');
+  assert.ok(onlyLast.cards.filter((c) => c.id !== 'warning').every((c) => c.show === 'always'));
 });
 
 test('at least one card is always: never/auto everywhere forces hero to always', () => {
   const none = normalizeLayout({ cards: CARD_IDS.map((id) => ({ id, show: 'never' })) });
   assert.deepEqual(none.cards.filter((c) => c.show === 'always').map((c) => c.id), ['hero']);
-  const onlyAuto = normalizeLayout({ cards: [{ id: 'nextHour', show: 'auto' }, { id: 'warning', show: 'auto' }, { id: 'hero', show: 'never' },
+  const onlyAuto = normalizeLayout({ cards: [{ id: 'nextHour', show: 'auto' }, { id: 'warning', show: 'auto' }, { id: 'nowcast3h', show: 'auto' }, { id: 'hero', show: 'never' },
     { id: 'metrics', show: 'never' }, { id: 'hours', show: 'never' }, { id: 'days', show: 'never' }] });
   assert.equal(showOf(onlyAuto, 'hero'), 'always');
   assert.equal(showOf(onlyAuto, 'nextHour'), 'auto');

@@ -32,6 +32,7 @@ const widths = opt('widths', '360,480').split(',').map(Number);
 const themes = opt('themes', 'light,dark').split(',');
 const layoutName = opt('layout', 'default');
 const edit = args.includes('--edit');
+const licence = args.includes('--licence');
 const previews = args.includes('--previews');
 
 const always = (ids) => ids.map((id) => ({ id, show: 'always' }));
@@ -41,6 +42,8 @@ const LAYOUTS = {
   minimal: { cards: [...always(['hero', 'nextHour']), { id: 'warning', show: 'never' }, { id: 'metrics', show: 'never' }, { id: 'hours', show: 'never' }, { id: 'days', show: 'never' }] },
   // The next-hour card only when it rains (the owner's "csak ha lesz eső").
   'nexthour-auto': { cards: [{ id: 'warning', show: 'auto' }, ...always(['hero', 'metrics']), { id: 'nextHour', show: 'auto' }, ...always(['hours', 'days'])] },
+  // The 0-3 h card only when it rains within 3 h.
+  'nowcast-auto': { cards: [{ id: 'warning', show: 'auto' }, ...always(['hero', 'metrics', 'nextHour']), { id: 'nowcast3h', show: 'auto' }, ...always(['hours', 'days'])] },
   // The warning band always, with its quiet state on a calm day.
   'warning-always': { cards: [...always(['warning', 'hero', 'metrics', 'nextHour', 'hours', 'days'])] },
   // A layout saved before the three states: must migrate.
@@ -94,7 +97,7 @@ async function blankText(page) {
   });
 }
 
-async function shoot(browser, { name, data, settings, width, dark, preview = false, openEdit = false }) {
+async function shoot(browser, { name, data, settings, width, dark, preview = false, openEdit = false, openLicence = false }) {
   const page = await browser.newPage({ viewport: { width, height: 800 }, deviceScaleFactor: 2 });
   await page.exposeFunction('__mvNormalize', (body) => normalizeLayout({ cards: body && body.cards }));
   await page.addInitScript(mockScript({ settings, data, dark, preview }));
@@ -104,6 +107,11 @@ async function shoot(browser, { name, data, settings, width, dark, preview = fal
   if (openEdit) {
     await page.click('.edit-btn');
     await page.waitForSelector('.rows .row');
+    await page.waitForTimeout(100);
+  }
+  if (openLicence) {
+    await page.click('.foot .lic');
+    await page.waitForSelector('.foot .lic.open');
     await page.waitForTimeout(100);
   }
   if (preview) await blankText(page);
@@ -131,6 +139,7 @@ async function dragCheck(browser, data) {
   await page.click('.rows .row:nth-child(2) .switch');
   // The next-hour card to "if rain", the warning band to "always".
   await page.click('.rows .row[data-id="nextHour"] .seg button[data-show="auto"]');
+  await page.click('.rows .row[data-id="nowcast3h"] .seg button[data-show="never"]');
   await page.click('.rows .row[data-id="warning"] .seg button[data-show="always"]');
   // Refused: with every other card off or auto, the last 'always' (hero) may not leave.
   for (const id of ['hours', 'days']) await page.click(`.rows .row[data-id="${id}"] .switch`);
@@ -180,8 +189,8 @@ try {
       if (only.length && !only.includes(variant)) continue;
       const data = LAYOUTS[layoutName] ? { ...base, layout: LAYOUTS[layoutName] } : base;
       for (const width of widths) for (const theme of themes) {
-        const tag = [variant, layoutName !== 'default' ? layoutName : '', edit ? 'edit' : '', theme, width, language === 'auto' ? lang : language].filter(Boolean).join('-');
-        const r = await shoot(browser, { name: tag, data, settings: { language }, width, dark: theme === 'dark', openEdit: edit });
+        const tag = [variant, layoutName !== 'default' ? layoutName : '', edit ? 'edit' : '', licence ? 'licence' : '', theme, width, language === 'auto' ? lang : language].filter(Boolean).join('-');
+        const r = await shoot(browser, { name: tag, data, settings: { language }, width, dark: theme === 'dark', openEdit: edit, openLicence: licence });
         console.log(tag, r.height + 'px', path.relative(repo, r.file));
       }
     }
