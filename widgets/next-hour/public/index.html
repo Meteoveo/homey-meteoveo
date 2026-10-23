@@ -73,7 +73,12 @@
         );
         root.append(now, el('div', 'headline', headline(d)));
 
-        const steps = ((d.nextHour && d.nextHour.steps) || []).filter((s) => s.leadMinutes <= 120);
+        // By each step's own time: a response kept after a 304 is older than its leadMinutes say.
+        const nowMs = Date.now();
+        const steps = ((d.nextHour && d.nextHour.steps) || []).filter((s) => {
+          const at = Date.parse(s.at);
+          return at + 600000 > nowMs && at <= nowMs + 120 * 60000;
+        });
         if (steps.length) {
           const bar = el('div', 'bar');
           for (const s of steps) bar.append(el('span', s.band + (s.source === 'model' ? ' model' : '')));
