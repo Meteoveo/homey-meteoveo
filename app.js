@@ -3,6 +3,13 @@
 const Homey = require('homey');
 const { MeteoVeoClient } = require('./lib/client');
 const { normalizeLayout, layoutKey } = require('./lib/widget-layout');
+const { TileCache, RadarTileSource, radarTilesFor } = require('./lib/tile-cache');
+
+/** A dashboard that asked for the radar this recently keeps its tiles warm. */
+const RADAR_WARM_WINDOW_MS = 20 * 60000;
+const RADAR_WARM_EVERY_MS = 5 * 60000;
+/** The frame lists change every 10 minutes; a dashboard opening within a minute reuses them. */
+const RADAR_LISTS_TTL_MS = 60000;
 
 const REPORTS = {
   report_temperature: ['temperature', '°C'],
@@ -19,6 +26,11 @@ class MeteoVeoApp extends Homey.App {
   async onInit() {
     this.client = new MeteoVeoClient({ version: this.homey.manifest.version });
     this._api = null;
+    // The radar widget's tiles: an in-memory LRU (observed frames are immutable) and a fetch pool of 10.
+    this.radarSource = new RadarTileSource({ client: this.client, cache: new TileCache(), concurrency: 10, log: (m) => this.log(m) });
+    this._radarAsks = new Map(); // deviceId -> { at, tiles } : the last stage a widget asked for
+    this._radarLists = new Map(); // deviceId -> { at, data } : the last frame lists, for a minute
+    this.homey.setInterval(() => this._warmRadar().catch((err) => this.log('radar warm', err.message)), RADAR_WARM_EVERY_MS);
 
     const { flow } = this.homey;
     flow.getConditionCard('rain_within')
@@ -84,46 +96,78 @@ class MeteoVeoApp extends Homey.App {
     return devices.find((d) => d.getData().id === deviceId) || devices[0] || null;
   }
 
-  /** Data for the radar widget (widgets/radar/api.js): place + frame lists; an unknown id falls back to the first location. */
-  async radarData(deviceId) {
+  /**
+   * Data for the radar widget (widgets/radar/api.js): place + frame lists; an
+   * unknown id falls back to the first location. When the widget says its map
+   * (`stage` = { zoom, width, height }), the newest observed frame's tiles ride
+   * along as `first` - the picture is on screen one round trip earlier.
+   */
+  async radarData(deviceId, stage) {
     const device = this._device(deviceId);
     const language = this.homey.i18n.getLanguage();
     if (!device) return { state: 'no_device', language };
-    return { language, ...(await device.radarData(2)) };
+    const id = device.getData().id;
+    const memo = this._radarLists.get(id);
+    const lists = memo && Date.now() - memo.at < RADAR_LISTS_TTL_MS ? memo.data : await device.radarData(2);
+    if (lists.state === 'ok') this._radarLists.set(id, { at: Date.now(), data: lists });
+    const data = { language, ...lists };
+    if (data.state === 'ok' && stage && data.frames && data.frames.length) {
+      const tiles = radarTilesFor({ lat: data.lat, lon: data.lon, zoom: stage.zoom, width: stage.width, height: stage.height });
+      if (tiles.length) {
+        this._radarAsks.set(device.getData().id, { at: Date.now(), tiles });
+        const at = data.frames[data.frames.length - 1];
+        const { frames } = await this.radarSource.tiles(device.radarKey(), { frames: [{ at, kind: 'obs' }], tiles });
+        data.first = { at, tiles: tiles.map((t, i) => ({ ...t, tile: frames[0].tiles[i] })) };
+      }
+    }
+    return data;
   }
 
   /**
    * Radar tiles for the widget, fetched here with the device's key: the API
    * sends no CORS headers, so the widget's page cannot fetch them itself (and
-   * this keeps the key on the Homey). One call per frame. A tile the server
-   * has nothing for is `null` (404 = empty, ADR-0171: a dry area, not a
-   * failure); a tile that could not be fetched is `{ error: true }`, so the
-   * widget can tell "clear" from "unknown". Hard caps keep a request small.
+   * this keeps the key on the Homey). One call carries several frames of the
+   * same stage; the app's LRU answers what it already has (lib/tile-cache.js).
+   * A tile the server has nothing for is `null` (404 = empty, ADR-0171); a
+   * tile that could not be fetched is `{ error: true }`.
+   *
+   * Two request shapes: `{ frames: [{at, kind}], tiles: [{z,x,y}] }` (the
+   * widget since the progressive loader) answered as `{ frames: [{at, tiles}] }`,
+   * and the first widget's flat `tiles: [{z,x,y,at}]` answered as a flat list.
    */
-  async radarTiles(deviceId, tiles) {
+  async radarTiles(deviceId, body) {
     const device = this._device(deviceId);
-    const key = device && device.radarKey();
-    const list = Array.isArray(tiles) ? tiles.slice(0, 16) : [];
-    if (!key) return list.map(() => null);
-    const out = new Array(list.length).fill(null);
-    let next = 0;
-    const worker = async () => {
-      while (next < list.length) {
-        const i = next++;
-        const t = list[i] || {};
-        const z = Number(t.z); const x = Number(t.x); const y = Number(t.y);
-        if (![z, x, y].every(Number.isInteger) || z < 0 || z > 12) continue;
-        try {
-          const tile = await this.client.radarTile(key, { z, x, y, at: typeof t.at === 'string' ? t.at : null });
-          if (tile) out[i] = { type: tile.type, data: tile.bytes.toString('base64') };
-        } catch (err) {
-          this.log('radar tile', z, x, y, err.message);
-          out[i] = { error: true };
-        }
-      }
-    };
-    await Promise.all([worker(), worker(), worker(), worker()]);
-    return out;
+    const key = device ? device.radarKey() : null;
+    if (body && Array.isArray(body.frames)) {
+      const tiles = Array.isArray(body.tiles) ? body.tiles : [];
+      if (device && tiles.length) this._radarAsks.set(device.getData().id, { at: Date.now(), tiles: tiles.slice(0, 25) });
+      return this.radarSource.tiles(key, { frames: body.frames, tiles });
+    }
+    const flat = Array.isArray(body) ? body : [];
+    const at = flat.length && typeof flat[0].at === 'string' ? flat[0].at : null;
+    const { frames } = await this.radarSource.tiles(key, { frames: [{ at }], tiles: flat });
+    return frames.length ? frames[0].tiles : flat.map(() => null);
+  }
+
+  /**
+   * Keeps the tiles of recently watched stages warm: the newest observed
+   * frames and the nowcast instants, so a dashboard opening (or the 5-minute
+   * refresh) finds them in the cache. Only while a radar widget asked in the
+   * last 20 minutes; the frame lists themselves are one small request.
+   */
+  async _warmRadar() {
+    const now = Date.now();
+    for (const [deviceId, ask] of this._radarAsks) {
+      if (now - ask.at > RADAR_WARM_WINDOW_MS) { this._radarAsks.delete(deviceId); continue; }
+      const device = this._device(deviceId);
+      const key = device && device.radarKey();
+      if (!key) continue;
+      const lists = await device.radarData(2).catch(() => null);
+      if (!lists || lists.state !== 'ok') continue;
+      this._radarLists.set(deviceId, { at: now, data: lists });
+      const fetched = await this.radarSource.warm(key, lists, ask.tiles, { observed: 2 });
+      if (fetched) this.log(`radar warm: ${fetched} tiles fetched for a watched stage`);
+    }
   }
 
   /** The saved card layout of a widget instance, always valid (lib/widget-layout.js). */

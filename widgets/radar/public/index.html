@@ -49,6 +49,9 @@
     .timeline button.fc.active::before { background: var(--mv-ochre); border-color: var(--mv-ochre); }
     .timeline button.pending::before { opacity: .35; }
     .credit { padding: 0 12px 10px; font-size: 9.5px; line-height: 1.35; color: var(--homey-text-color-light, #777); }
+    .timeline button.pending::before { opacity: .3; }
+    .pill.time .spin { width: 10px; height: 10px; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; animation: mvspin .8s linear infinite; }
+    @keyframes mvspin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body class="homey-widget-full">
@@ -59,6 +62,7 @@
       const root = document.getElementById('root');
       const settings = Homey.getSettings() || {};
       const deviceId = settings.device && settings.device.id ? settings.device.id : '';
+      const instanceId = typeof Homey.getWidgetInstanceId === 'function' ? (Homey.getWidgetInstanceId() || '') : '';
       const ZOOMS = { local: 10, comarca: 9, region: 7 };
       const zoomLevel = ZOOMS[settings.zoom] || ZOOMS.comarca;
       const TILE = 256;
@@ -69,6 +73,8 @@
       const MAX_FRAMES = 14;       // decoded frames kept at once (each one stage-sized canvas)
       const FRAME_MS = 480;        // the loop's pace
       const HOLD_MS = 1600;        // the pause on the last frame
+      const MIN_PLAY = 3;          // the loop starts once this many frames are ready
+      const CHUNK = 5;             // frames per widget->app call after the first (the first call is the newest frame alone)
       const REFRESH_MS = 5 * 60000;
       const LEGEND = [['rgb(80,170,255)', '10'], ['rgb(0,110,255)', '20'], ['rgb(255,220,0)', '30'], ['rgb(255,140,0)', '40'], ['rgb(255,40,40)', '50+']];
       const RELIEF = 'https://www.meteoveo.com/relieve';
@@ -133,18 +139,9 @@
         }));
       }
 
-      /** One frame: its radar tiles through the app (the key stays there), composited into one stage-sized canvas. */
-      async function loadFrame(frame, token) {
-        let tiles;
-        try {
-          tiles = await Homey.api('POST', '/tiles', { device: deviceId, tiles: stage.radar.map((r) => ({ z: r.z, x: r.x, y: r.y, at: frame.at })) });
-        } catch (err) { tiles = null; }
-        if (token !== loadToken) return;
-        // null = the server has no tile there (404 = EMPTY, ADR-0171: a dry area or a quiet instant,
-        // a frame to show clear); { error } = could not be fetched. Only an all-error frame is dropped.
-        const list = Array.isArray(tiles) ? tiles : null;
-        if (!list || (list.length && list.every((x) => x && x.error))) { frame.status = 'missing'; frame.canvas = null; return; }
-        if (!list.some((x) => x && x.data)) { frame.status = 'ready'; frame.canvas = null; return; }
+      /** Composite one frame's tiles into a stage-sized canvas; null when the frame is empty. */
+      async function composite(list) {
+        if (!list.some((x) => x && x.data)) return null;
         const canvas = document.createElement('canvas');
         canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
         const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -154,17 +151,46 @@
           const img = await loadImage(`data:${tile.type || 'image/png'};base64,${tile.data}`);
           if (img) ctx.drawImage(img, r.left, r.top, r.size, r.size);
         }));
+        return canvas;
+      }
+
+      /**
+       * A chunk of frames in ONE call to the app (the key stays there; the app's cache
+       * answers what it has). null = the server has no tile there (404 = EMPTY, ADR-0171:
+       * a frame to show clear); { error } = could not be fetched; only an all-error frame
+       * is dropped. The tile bitmaps are gone after compositing - one canvas per frame stays.
+       */
+      async function loadFrames(chunk, token) {
+        let answer;
+        try {
+          answer = await Homey.api('POST', '/tiles', {
+            device: deviceId,
+            frames: chunk.map((f) => ({ at: f.at, kind: f.kind })),
+            tiles: stage.radar.map((r) => ({ z: r.z, x: r.x, y: r.y })),
+          });
+        } catch (err) { answer = null; }
         if (token !== loadToken) return;
-        frame.canvas = canvas; frame.status = 'ready';
+        const byAt = new Map(((answer && answer.frames) || []).map((f) => [f.at, f.tiles]));
+        for (const frame of chunk) {
+          const list = byAt.get(frame.at);
+          if (!Array.isArray(list) || (list.length && list.every((x) => x && x.error))) { frame.status = 'missing'; frame.canvas = null; continue; }
+          frame.canvas = await composite(list);
+          if (token !== loadToken) return;
+          frame.status = 'ready';
+        }
       }
 
       function visibleFrames() { return frames.filter((f) => f.status !== 'missing'); }
+      function readyFrames() { return visibleFrames().filter((f) => f.status === 'ready'); }
+      /** A frame the loop may stop on: ready, or - while the first ones load - nothing at all. */
+      function showable(f) { return f && f.status === 'ready'; }
 
       function show(i) {
         const list = visibleFrames();
         if (!list.length) return;
         index = ((i % list.length) + list.length) % list.length;
         const f = list[index];
+        if (!showable(f)) return; // not loaded yet: no label, no frame
         const ctx = layer.getContext('2d');
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.clearRect(0, 0, layer.width, layer.height);
@@ -178,6 +204,7 @@
         else if (f === latestObs) label = t('now') + ' · ' + hhmm(f.at, data.timezone);
         else label = hhmm(f.at, data.timezone);
         timePill.innerHTML = '<span class="dot"></span>';
+        timePill.style.display = 'flex';
         timePill.append(document.createTextNode(label));
         if (f === latestObs) {
           const age = Math.round((nowMs - Date.parse(f.at)) / 60000);
@@ -190,16 +217,19 @@
         clearTimeout(timer); timer = null;
         if (!playing || document.hidden) return;
         const list = visibleFrames();
-        if (list.length < 2) return;
-        show(index + 1);
+        if (readyFrames().length < 2) return;
+        // The next READY frame after the current one (frames still loading are skipped, not shown blank).
+        let next = index;
+        for (let k = 1; k <= list.length; k++) { const c = (index + k) % list.length; if (showable(list[c])) { next = c; break; } }
+        show(next);
         timer = setTimeout(tick, index === list.length - 1 ? HOLD_MS : FRAME_MS);
       }
       function setPlaying(on) {
         playing = on;
-        playBtn.innerHTML = on ? '<svg viewBox="0 0 24 24"><path d="M7 5h4v14H7zm6 0h4v14h-4z"/></svg>' : '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-        playBtn.setAttribute('aria-label', t(on ? 'pause' : 'play'));
+        if (!playBtn) return;
         clearTimeout(timer); timer = null;
-        if (on) timer = setTimeout(tick, FRAME_MS);
+        if (on && readyFrames().length >= 2) timer = setTimeout(tick, FRAME_MS);
+        updatePlayButton();
       }
 
       function buildTimeline() {
@@ -208,14 +238,17 @@
           const b = el('button', (f.kind === 'fc' ? 'fc' : '') + (f.status === 'pending' ? ' pending' : ''));
           b.type = 'button';
           b.setAttribute('aria-label', f.kind === 'fc' ? t('frame_forecast', { minutes: Math.max(10, Math.round((Date.parse(f.at) - Date.now()) / 600000) * 10) }) : t('frame', { time: hhmm(f.at, data.timezone) }));
-          b.addEventListener('click', () => { haptic(); setPlaying(false); show(k); });
+          b.addEventListener('click', () => { if (f.status !== 'ready') return; haptic(); setPlaying(false); show(k); });
           timeline.append(b);
         });
         [...timeline.children].forEach((b, k) => b.classList.toggle('active', k === index));
       }
 
       /** Merge the lists from the server into the frame set, keeping what is already decoded. */
+      let forecastBaseAt = null;
       function mergeFrames(d) {
+        // A new nowcast run: its instants changed content, so the decoded forecast frames are stale.
+        if (d.forecastBaseAt !== forecastBaseAt) { for (const f of frames) if (f.kind === 'fc') { f.status = 'pending'; f.canvas = null; } forecastBaseAt = d.forecastBaseAt || null; }
         const wanted = [...(d.frames || []).map((at) => ({ at, kind: 'obs' })), ...(d.forecast || []).map((at) => ({ at, kind: 'fc' }))];
         // The memory cap: drop the oldest observed frames first.
         while (wanted.length > MAX_FRAMES) { const i = wanted.findIndex((w) => w.kind === 'obs'); wanted.splice(i >= 0 ? i : 0, 1); }
@@ -227,20 +260,91 @@
 
       async function loadAll() {
         const token = ++loadToken;
+        const t0 = performance.now();
+        // The newest frame may already be here, from the /radar answer: place its tiles by id.
+        const first = data.first;
+        let firstCame = false;
+        if (first && Array.isArray(first.tiles)) {
+          const frame = frames.find((f) => f.kind === 'obs' && f.at === first.at && f.status === 'pending');
+          if (frame) {
+            const byId = new Map(first.tiles.map((t) => [`${t.z}/${t.x}/${t.y}`, t.tile]));
+            const list = stage.radar.map((r) => byId.get(`${r.z}/${r.x}/${r.y}`));
+            if (list.every((x) => x !== undefined)) {
+              if (list.length && list.every((x) => x && x.error)) { frame.status = 'missing'; } else { frame.canvas = await composite(list); frame.status = 'ready'; firstCame = true; }
+              if (token !== loadToken) return;
+            }
+          }
+          data.first = null;
+        }
         const pending = frames.filter((f) => f.status === 'pending');
-        // Two at a time: the Homey answers one frame per call; the base map arrives meanwhile.
+        if (!frames.length && !data.frames) return; // the shell: the lists are still on their way
+        if (!pending.length) { finish(token, t0); return; }
+        // Newest observed frame FIRST and alone (the picture the user wants), then the other
+        // observed frames newest-first in chunks, then the nowcast instants.
+        const obs = pending.filter((f) => f.kind === 'obs').reverse();
+        const fc = pending.filter((f) => f.kind === 'fc');
+        const order = [...obs, ...fc];
+        // When the newest frame came with the lists there is no hurry for a single-frame call.
+        const chunks = [];
+        const start = firstCame ? 0 : 1;
+        if (!firstCame && order.length) chunks.push([order[0]]);
+        for (let i = start; i < order.length; i += CHUNK) chunks.push(order.slice(i, i + CHUNK));
+        let started = false;
+        const afterChunk = () => {
+          if (token !== loadToken) return;
+          buildTimeline();
+          const ready = readyFrames();
+          if (!ready.length) return;
+          if (!window.__mvRadarFirst) window.__mvRadarFirst = Math.round(performance.now() - t0);
+          const list = visibleFrames();
+          const current = list[index];
+          if (!started) {
+            // The newest observed frame is on screen as soon as it exists; the loop waits for MIN_PLAY.
+            setLoadingPill(false);
+            const latest = list.map((f) => f.kind === 'obs' && f.status === 'ready').lastIndexOf(true);
+            show(latest >= 0 ? latest : list.indexOf(ready[ready.length - 1]));
+            started = true;
+          } else if (!showable(current)) {
+            show(list.indexOf(ready[ready.length - 1]));
+          }
+          if (playing && !timer && ready.length >= MIN_PLAY) setPlaying(true);
+          updatePlayButton();
+        };
+        if (readyFrames().length) afterChunk();
+        // Two calls in flight at most: the first (one frame) is answered quickly, the rest stream behind it.
         let next = 0;
-        const worker = async () => { while (next < pending.length && token === loadToken) { const f = pending[next++]; await loadFrame(f, token); if (token === loadToken) { buildTimeline(); if (!playing || !timer) show(index); } } };
+        const worker = async () => { while (next < chunks.length && token === loadToken) { const c = chunks[next++]; await loadFrames(c, token); afterChunk(); } };
         await Promise.all([worker(), worker()]);
+        finish(token, t0);
+      }
+
+      function finish(token, t0) {
         if (token !== loadToken) return;
+        buildTimeline();
         const list = visibleFrames();
-        if (!list.length) { setState(frames.length ? 'unavailable' : 'no_frames'); setPlaying(false); return; }
-        setState(null);
-        // Start on the latest observed frame, then loop from the start.
-        const latest = list.map((f) => f.kind).lastIndexOf('obs');
-        show(latest >= 0 ? latest : list.length - 1);
-        if (playing) setPlaying(true);
+        if (!list.length) { setLoadingPill(false); setState(frames.length ? 'unavailable' : 'no_frames'); setPlaying(false); updatePlayButton(); return; }
+        setState(null); setLoadingPill(false);
+        if (!showable(list[index])) { const latest = list.map((f) => f.kind === 'obs' && f.status === 'ready').lastIndexOf(true); show(latest >= 0 ? latest : list.length - 1); }
+        if (playing && !timer && readyFrames().length >= 2) setPlaying(true);
+        updatePlayButton();
+        window.__mvRadarAll = Math.round(performance.now() - t0);
         window.__mvRadarReady = true;
+      }
+
+      /** The play button: disabled (and showing "play") until the loop has frames; "pause" only while it really runs. */
+      function updatePlayButton() {
+        if (!playBtn) return;
+        const can = readyFrames().length >= 2;
+        playBtn.disabled = !can;
+        const running = playing && !!timer;
+        playBtn.innerHTML = running ? '<svg viewBox="0 0 24 24"><path d="M7 5h4v14H7zm6 0h4v14h-4z"/></svg>' : '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+        playBtn.setAttribute('aria-label', t(running ? 'pause' : 'play'));
+      }
+
+      /** A small pill with a spinner where the time will be - not a sheet over the map. */
+      function setLoadingPill(on) {
+        if (!timePill) return;
+        if (on) { timePill.className = 'pill time'; timePill.innerHTML = '<span class="spin"></span>'; timePill.append(document.createTextNode(t('loading'))); timePill.style.display = 'flex'; }
       }
 
       function setState(key) {
@@ -281,8 +385,8 @@
         const legend = el('div', 'legend');
         for (const [color, label] of LEGEND) { const i = el('i'); i.style.background = color; i.title = label; legend.append(i); }
         legend.append(el('b', '', LEGEND[0][1] + '–' + LEGEND[LEGEND.length - 1][1] + ' ' + t('legend')));
-        timePill = el('div', 'pill time'); timePill.style.display = 'none';
-        stateBox = el('div', 'state'); stateBox.textContent = t('loading');
+        timePill = el('div', 'pill time');
+        stateBox = el('div', 'state'); stateBox.style.display = 'none';
         map.append(place, legend, timePill, stateBox);
         const controls = el('div', 'controls');
         playBtn = el('button', 'play'); playBtn.type = 'button';
@@ -291,21 +395,43 @@
         controls.append(playBtn, timeline);
         wrap.append(controls, el('div', 'credit', t('credit')));
         root.append(wrap);
-        // The pin is drawn over the map because the svg is sized by CSS; make sure the time pill shows once a frame is ready.
-        const observer = new MutationObserver(() => { if (timePill.textContent) { timePill.style.display = 'flex'; observer.disconnect(); } });
-        observer.observe(timePill, { childList: true });
-        frames = [];
+        frames = []; forecastBaseAt = undefined;
         mergeFrames(d);
         buildTimeline();
-        setPlaying(true);
+        playing = true; updatePlayButton();
+        setLoadingPill(true);
         drawBase();
         loadAll();
       }
 
+      // The place, remembered per widget instance (a per-viewer convenience): the map shell
+      // - relief, pin, pills, the loading pill - is on screen before the lists answer.
+      const SHELL_KEY = 'mv-radar-shell:' + (instanceId || 'x');
+      function readShell() { try { const v = JSON.parse(localStorage.getItem(SHELL_KEY) || 'null'); return v && Number.isFinite(v.lat) && Number.isFinite(v.lon) ? v : null; } catch (e) { return null; } }
+      function writeShell(d) { try { localStorage.setItem(SHELL_KEY, JSON.stringify({ lat: d.lat, lon: d.lon, place: d.place, name: d.name, timezone: d.timezone, language: d.language })); } catch (e) { /* no storage */ } }
+      const sameStage = (a, b) => a && b && a.lat === b.lat && a.lon === b.lon;
+
       async function load(first) {
         let d;
-        try { d = await Homey.api('GET', '/radar?device=' + encodeURIComponent(deviceId)); } catch (err) { d = { state: 'unavailable' }; }
-        if (first || !data || data.state !== 'ok' || d.state !== 'ok' || d.lat !== data.lat || d.lon !== data.lon) { render(d); fit(); return; }
+        let shell = null;
+        if (first) {
+          shell = readShell();
+          // frames: null = "not here yet" (loadAll waits), not an empty list (that would be "no images").
+          if (shell) { render({ state: 'ok', ...shell, frames: null, forecast: null, forecastBaseAt: null }); fit(); }
+        }
+        // The map's zoom and size go along, so the app can answer the newest frame's tiles with the lists.
+        const w0 = root.clientWidth || document.documentElement.clientWidth || 360;
+        const h0 = w0 <= 400 ? w0 : Math.round(w0 * 0.75);
+        const q = `/radar?device=${encodeURIComponent(deviceId)}&zoom=${encodeURIComponent(settings.zoom || 'comarca')}&w=${w0}&h=${h0}`;
+        try { d = await Homey.api('GET', q); } catch (err) { d = { state: 'unavailable' }; }
+        if (d.state === 'ok') writeShell(d);
+        if (first && shell && d.state === 'ok' && sameStage(shell, d)) {
+          // The shell already stands: only the frames are new.
+          data = d; pickLanguage(d);
+          mergeFrames(d); buildTimeline(); loadAll();
+          return;
+        }
+        if (first || !data || data.state !== 'ok' || d.state !== 'ok' || !sameStage(d, data)) { render(d); fit(); return; }
         // A refresh: new frames join, old ones leave, the decoded ones stay.
         data = d;
         mergeFrames(d);
@@ -320,6 +446,7 @@
       // A hook for the preview harness only (no behaviour depends on it).
       window.__mvRadar = {
         show: (i) => { setPlaying(false); show(i); },
+        timing: () => ({ first: window.__mvRadarFirst || null, all: window.__mvRadarAll || null }),
         frames: () => frames.map((f) => ({ at: f.at, kind: f.kind, status: f.status, painted: f.canvas ? (() => { const d = f.canvas.getContext('2d').getImageData(0, 0, f.canvas.width, f.canvas.height).data; let n = 0; for (let k = 3; k < d.length; k += 4) if (d[k] > 0) n++; return n; })() : 0 })),
       };
 
