@@ -10,8 +10,7 @@
   },
   "scripts": {
     "test": "node --test test/*.test.js",
-    "validate": "homey app validate --level publish",
-    "lint:json": "node scripts/check-locales.js"
+    "validate": "homey app validate --level publish"
   },
   "dependencies": {
     "homey-api": "3.20.1"

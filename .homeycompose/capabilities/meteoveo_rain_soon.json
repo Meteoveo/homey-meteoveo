@@ -1,0 +1,20 @@
+{
+  "type": "boolean",
+  "title": {
+    "en": "Rain within the hour",
+    "es": "Lluvia en la próxima hora"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "insights": true,
+  "insightsTitleTrue": {
+    "en": "Rain expected within the hour",
+    "es": "Se espera lluvia en la próxima hora"
+  },
+  "insightsTitleFalse": {
+    "en": "No rain expected within the hour",
+    "es": "No se espera lluvia en la próxima hora"
+  },
+  "icon": "/assets/capabilities/rain.svg"
+}
