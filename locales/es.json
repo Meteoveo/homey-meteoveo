@@ -26,10 +26,15 @@
     },
     "location": {
       "title": "¿Dónde está tu casa?",
-      "subtitle": "La ubicación de tu Homey, redondeada a 1 km aproximadamente. Puedes cambiarla.",
+      "subtitle": "Busca tu pueblo y pon el marcador en tu casa. Guardamos la ubicación redondeada a 1 km aproximadamente.",
       "lat": "Latitud",
       "lon": "Longitud",
-      "hint": "MeteoVeo cubre España, Baleares, Canarias, Ceuta y Melilla."
+      "hint": "MeteoVeo cubre España, Baleares, Canarias, Ceuta y Melilla.",
+      "search": "Busca tu pueblo o ciudad",
+      "search_none": "No hay ningún pueblo con ese nombre.",
+      "map_hint": "Toca el mapa o arrastra el marcador hasta tu casa.",
+      "use_homey": "Usar la ubicación de mi Homey",
+      "coords": "Coordenadas"
     },
     "station": {
       "title": "¿Tienes una estación meteorológica?",

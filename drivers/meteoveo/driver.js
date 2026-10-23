@@ -48,6 +48,7 @@ class MeteoVeoDriver extends Homey.Driver {
     on('verify', (d) => pairing.verify(d));
     on('login', (d) => pairing.login(d));
     on('homey_location', async () => this._homeyLocation());
+    on('search_places', (d) => pairing.searchPlaces(d));
     on('set_location', async (d) => pairing.setLocation(d));
     on('station_candidates', async () => this._stationCandidates());
     on('set_station', async (d) => pairing.setStation(d.station || null));

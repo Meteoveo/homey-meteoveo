@@ -104,3 +104,14 @@ test('coordinates are validated and rounded before they leave Homey', () => {
   s.setLocation({ lat: 38.923456, lon: -0.261199 });
   assert.deepEqual(s.location, { lat: 38.92, lon: -0.26 });
 });
+
+test('place search needs a signed-in session; short queries cost no request', async () => {
+  const searched = [];
+  const client = fakeClient({ searchSettlements: async (token, q) => { searched.push([token, q]); return [{ name: 'Almiserà' }]; } });
+  const s = new PairingSession({ client, lang: 'es' });
+  await assert.rejects(s.searchPlaces({ q: 'almi' }), /not_signed_in/);
+  await s.login({ email: 'a@b.es', password: 'pw' });
+  assert.deepEqual(await s.searchPlaces({ q: ' a ' }), []);
+  assert.deepEqual(await s.searchPlaces({ q: ' almi ' }), [{ name: 'Almiserà' }]);
+  assert.deepEqual(searched, [['JWT', 'almi']]);
+});

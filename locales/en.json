@@ -26,10 +26,15 @@
     },
     "location": {
       "title": "Where is home?",
-      "subtitle": "Your Homey's location, rounded to about 1 km. You can change it.",
+      "subtitle": "Find your town, then put the pin on your home. We keep the location rounded to about 1 km.",
       "lat": "Latitude",
       "lon": "Longitude",
-      "hint": "MeteoVeo covers Spain, the Balearic and Canary Islands, Ceuta and Melilla."
+      "hint": "MeteoVeo covers Spain, the Balearic and Canary Islands, Ceuta and Melilla.",
+      "search": "Search your town or city",
+      "search_none": "No town found with that name.",
+      "map_hint": "Tap the map or drag the pin to your home.",
+      "use_homey": "Use my Homey's location",
+      "coords": "Coordinates"
     },
     "station": {
       "title": "Do you have a weather station?",
