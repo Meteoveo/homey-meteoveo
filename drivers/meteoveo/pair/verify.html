@@ -6,7 +6,7 @@
 <form class="homey-form" onsubmit="return false">
   <div class="homey-form-group">
     <label class="homey-form-label" for="code" data-i18n="pair.verify.code"></label>
-    <input class="homey-form-input" id="code" type="text" autocapitalize="characters" autocorrect="off" spellcheck="false" autocomplete="one-time-code" />
+    <input class="homey-form-input" id="code" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" />
   </div>
   <p class="mv-hint" data-i18n="pair.verify.hint"></p>
   <button class="homey-button-primary-full" id="submit" data-i18n="pair.continue"></button>
