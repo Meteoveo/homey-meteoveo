@@ -175,3 +175,34 @@ test('a radar tile comes back as bytes with its type; 404 is null, 401 is Invali
   assert.equal(calls[1].url, `${API_BASE}/v1/overlays/radar/9/1/1.png`);
   await assert.rejects(c.radarTile('mvik_key', { z: 7, x: 1, y: 1 }), InvalidKey);
 });
+
+test('radar still image: JPEG of the "now" frame with the key, ETag passed back', async () => {
+  const fetch = async (url, init) => {
+    fetch.calls.push({ url: String(url), init });
+    return {
+      status: 200, ok: true,
+      headers: { get: (n) => ({ 'content-type': 'image/jpeg', etag: '"radar-1-es-jpg"' })[n.toLowerCase()] ?? null },
+      arrayBuffer: async () => new Uint8Array([0xff, 0xd8, 0xff]).buffer,
+    };
+  };
+  fetch.calls = [];
+  const img = await new MeteoVeoClient({ fetch, version: '0.1.0' }).radarImage('mvik_1.s', { lang: 'es' });
+  assert.equal(fetch.calls[0].url, `${API_BASE}/v1/integration/radar.webp?format=jpg&lang=es`);
+  assert.equal(fetch.calls[0].init.headers.Authorization, 'Bearer mvik_1.s');
+  assert.equal(img.contentType, 'image/jpeg');
+  assert.equal(img.etag, '"radar-1-es-jpg"');
+  assert.deepEqual([...img.buffer], [0xff, 0xd8, 0xff]);
+});
+
+test('radar still image: no coverage is a rejection with the code, busy is an outage', async () => {
+  const reply = (status, body, headers = {}) => async () => ({
+    status, ok: false, headers: { get: (n) => headers[n.toLowerCase()] ?? null },
+    text: async () => JSON.stringify(body), arrayBuffer: async () => new ArrayBuffer(0),
+  });
+  const c1 = new MeteoVeoClient({ fetch: reply(404, { error: { code: 'no_coverage' } }), version: '0.1.0' });
+  const e1 = await c1.radarImage('k', {}).catch((e) => e);
+  assert.ok(e1 instanceof RequestRejected);
+  assert.equal(e1.code, 'no_coverage');
+  const c2 = new MeteoVeoClient({ fetch: reply(503, { error: { code: 'busy' } }, { 'retry-after': '5' }), version: '0.1.0' });
+  await assert.rejects(c2.radarImage('k', {}), ServiceUnavailable);
+});

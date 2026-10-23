@@ -134,5 +134,8 @@
     "day_2": "Pasado mañana",
     "sentence": "__day__: __condition__, __max__°/__min__°, __chance__ % de lluvia",
     "unknown": "–"
+  },
+  "camera": {
+    "radar": "Radar"
   }
 }

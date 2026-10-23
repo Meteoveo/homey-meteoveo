@@ -16,6 +16,8 @@ const UPLOAD_MS = 60_000;
 // show up as a gap at MeteoVeo, not as a frozen value.
 const FLOW_READING_MAX_AGE_MS = 15 * 60_000;
 const OUTAGE_WARNING_AFTER = 3;
+// The radar picture changes with each 10-minute slice; asking more often only repeats it.
+const RADAR_IMAGE_MS = 10 * 60_000;
 
 // Homey's internal units for the capabilities a source device may offer.
 const DEFAULT_UNITS = {
@@ -52,8 +54,44 @@ class MeteoVeoDevice extends Homey.Device {
     this._start();
   }
 
+  /**
+   * The radar picture as the device's camera image and as the image token of
+   * the rain and warning triggers (contract v1 section 6, JPEG "now" frame).
+   * Homey fetches it lazily; update() after a new radar slice (10 min).
+   */
+  async _setupRadarImage() {
+    if (this._radarImage) return;
+    try {
+      const image = await this.homey.images.createImage();
+      image.setStream(async (stream) => {
+        const key = this.getStoreValue('key');
+        if (!key) throw new Error(this.homey.__('errors.signed_out'));
+        const { buffer } = await this.homey.app.client.radarImage(key, { lang: this._lang() });
+        stream.contentType = 'image/jpeg';
+        stream.filename = 'meteoveo-radar.jpg';
+        stream.end(buffer);
+      });
+      this._radarImage = image;
+      this._radarUpdatedAt = Date.now();
+      await this.setCameraImage('radar', this.homey.__('camera.radar'), image);
+    } catch (err) {
+      // An old Homey without camera images still gets everything else.
+      this.error('radar image unavailable:', err && err.message);
+    }
+  }
+
+  async _freshRadarImage() {
+    if (!this._radarImage) return null;
+    if (Date.now() - (this._radarUpdatedAt || 0) >= RADAR_IMAGE_MS) {
+      this._radarUpdatedAt = Date.now();
+      await this._radarImage.update().catch(this.error);
+    }
+    return this._radarImage;
+  }
+
   _start() {
     this._stop();
+    this._safe(this._setupRadarImage());
     this._pollTimer = this.homey.setInterval(() => this._safe(this.refresh()), POLL_MS);
     this._safe(this.refresh());
     if (this.getStoreValue('station')) {
@@ -62,6 +100,10 @@ class MeteoVeoDevice extends Homey.Device {
   }
 
   _stop() {
+    if (this._radarImage) {
+      this._radarImage.unregister().catch(this.error);
+      this._radarImage = null;
+    }
     if (this._pollTimer) this.homey.clearInterval(this._pollTimer);
     if (this._uploadTimer) this.homey.clearInterval(this._uploadTimer);
     this._pollTimer = null;
@@ -129,9 +171,16 @@ class MeteoVeoDevice extends Homey.Device {
     const now = Date.now();
     const rain = nextRainState(this.getStoreValue('rainState') || initialRainState(), home.nextHour, now);
     await this.setStoreValue('rainState', rain.state);
+    const warnings = newWarnings(home.warnings, this.getStoreValue('seenWarnings') || [], now);
+    // A fresh radar picture only when a trigger is about to carry it.
+    const radar = rain.events.length || warnings.fresh.length ? await this._freshRadarImage() : this._radarImage || null;
     for (const event of rain.events) {
       if (event.type === 'rain_expected') {
-        await this._trigger(event.type, { minutes: event.minutes ?? 0, intensity: this.homey.__(`intensity.${event.band || 'none'}`) });
+        await this._trigger(event.type, {
+          minutes: event.minutes ?? 0, intensity: this.homey.__(`intensity.${event.band || 'none'}`), radar,
+        });
+      } else if (event.type === 'rain_started') {
+        await this._trigger(event.type, { radar });
       } else if (event.type === 'rain_ending') {
         await this._trigger(event.type, { minutes: event.minutes ?? 0 });
       } else {
@@ -139,7 +188,6 @@ class MeteoVeoDevice extends Homey.Device {
       }
     }
 
-    const warnings = newWarnings(home.warnings, this.getStoreValue('seenWarnings') || [], now);
     await this.setStoreValue('seenWarnings', warnings.seen);
     for (const w of warnings.fresh) {
       await this._trigger('warning_issued', {
@@ -148,6 +196,7 @@ class MeteoVeoDevice extends Homey.Device {
         headline: w.headline || '',
         onset: this._when(w.onset),
         expires: this._when(w.expires),
+        radar,
       });
     }
 
