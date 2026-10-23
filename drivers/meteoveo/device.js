@@ -291,6 +291,7 @@ class MeteoVeoDevice extends Homey.Device {
       current: home.current,
       nextHour: home.nextHour,
       hourly: (home.hourly || []).slice(0, 12),
+      daily: (home.daily || []).slice(0, 7),
       warnings: home.warnings || [],
       attribution: home.attribution,
     };

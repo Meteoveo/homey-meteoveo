@@ -1,0 +1,18 @@
+/* Approximation of the Homey dashboard's widget stylesheet, for the preview
+   harness only (the real one is injected by the dashboard). */
+:root {
+  --homey-su: 4px; --homey-su-1: 4px; --homey-su-2: 8px; --homey-su-3: 12px; --homey-su-4: 16px;
+  --homey-background-color: #ffffff;
+  --homey-text-color: #1c1c1e; --homey-text-color-light: #6e6e73; --homey-text-color-white: #fff;
+  --homey-line-color: #d9d9de; --homey-line-color-light: #ececf0;
+  --homey-font-size-small: 14px; --homey-font-size-default: 17px; --homey-font-size-large: 20px; --homey-font-size-xxlarge: 32px;
+  --homey-border-radius-default: 16px; --homey-border-radius-small: 8px;
+}
+.homey-dark-mode {
+  --homey-background-color: #1c1c1e;
+  --homey-text-color: #f2f2f7; --homey-text-color-light: #9a9aa0;
+  --homey-line-color: #3a3a3c; --homey-line-color-light: #2c2c2e;
+}
+html { background: #e9eaee; }
+.homey-dark-mode html, html.homey-dark-mode { background: #000; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
