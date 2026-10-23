@@ -1,17 +1,24 @@
 // Dev harness: renders widgets/weather/public/index.html with a mocked Homey
 // object and writes screenshots (and, with --previews, the App Store preview
 // images). Usage:
-//   node scripts/widget-preview/render.mjs                 # all variants, es
-//   node scripts/widget-preview/render.mjs --lang en --only dry,raining --widths 360
-//   node scripts/widget-preview/render.mjs --previews      # preview-light/dark.png
+//   node scripts/widget-preview/render.mjs                          # all variants, Homey language es
+//   node scripts/widget-preview/render.mjs --only dry --widths 360 --language ca
+//   node scripts/widget-preview/render.mjs --only dry --edit        # the edit view
+//   node scripts/widget-preview/render.mjs --only dry --layout reordered
+//   node scripts/widget-preview/render.mjs --previews               # preview-light/dark.png
+// Options: --lang <es|en> (the Homey language = "automatic"), --language <auto|es|en|ca>
+// (the widget setting), --layout <default|reordered|minimal>, --edit, --themes, --widths, --only.
 import fs from 'node:fs';
 import path from 'node:path';
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '/Users/zsolt/MeteoVeo/node_modules/playwright/index.mjs';
 import { variants } from './variants.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '..', '..');
+const require = createRequire(import.meta.url);
+const { normalizeLayout } = require(path.join(repo, 'lib', 'widget-layout.js'));
 const widgetDir = path.join(repo, 'widgets', 'weather');
 const outDir = path.join(here, 'out');
 fs.mkdirSync(outDir, { recursive: true });
@@ -19,36 +26,37 @@ fs.mkdirSync(outDir, { recursive: true });
 const args = process.argv.slice(2);
 const opt = (name, def) => { const i = args.indexOf('--' + name); return i >= 0 ? args[i + 1] : def; };
 const lang = opt('lang', 'es');
+const language = opt('language', 'auto');
 const only = opt('only', '').split(',').filter(Boolean);
 const widths = opt('widths', '360,480').split(',').map(Number);
 const themes = opt('themes', 'light,dark').split(',');
-const layouts = opt('layouts', 'full').split(',');
+const layoutName = opt('layout', 'default');
+const edit = args.includes('--edit');
 const previews = args.includes('--previews');
 
-const locale = JSON.parse(fs.readFileSync(path.join(repo, 'locales', `${lang}.json`), 'utf8'));
+const LAYOUTS = {
+  default: undefined,
+  reordered: { cards: [{ id: 'days', on: true }, { id: 'hero', on: true }, { id: 'nextHour', on: true }, { id: 'warning', on: true }, { id: 'metrics', on: false }, { id: 'hours', on: false }] },
+  minimal: { cards: [{ id: 'hero', on: true }, { id: 'nextHour', on: true }, { id: 'warning', on: false }, { id: 'metrics', on: false }, { id: 'hours', on: false }, { id: 'days', on: false }] },
+};
+
 const mockCss = fs.readFileSync(path.join(here, 'homey-mock.css'), 'utf8');
 
-function lookup(key) {
-  return key.split('.').reduce((o, k) => (o && o[k] !== undefined ? o[k] : undefined), locale);
-}
-
 /** Installs window.Homey and calls onHomeyReady once the page's script is parsed. */
-function mockScript({ settings, data, strings, dark, preview }) {
+function mockScript({ settings, data, dark, preview }) {
   return `
     (() => {
-      const strings = ${JSON.stringify(strings)};
       const Homey = {
         getSettings: () => (${JSON.stringify(settings)}),
-        api: async () => (${JSON.stringify(data)}),
-        __: (key, tokens) => {
-          let s = strings[key];
-          if (s === undefined) return key;
-          for (const [k, v] of Object.entries(tokens || {})) s = s.split('__' + k + '__').join(String(v));
-          return s;
+        getWidgetInstanceId: () => 'preview-instance',
+        hapticFeedback: () => { window.__mvHaptics = (window.__mvHaptics || 0) + 1; },
+        api: async (method, path, body) => {
+          if (method === 'PUT') { window.__mvPut = body; return window.__mvNormalize(body); }
+          return (${JSON.stringify(data)});
         },
+        __: (key) => key,
         ready: (a) => { window.__mvHeight = a && a.height; window.__mvReady = true; },
         setHeight: async (h) => { window.__mvHeight = h; },
-        getLanguage: () => '${lang}',
       };
       window.Homey = Homey;
       document.addEventListener('DOMContentLoaded', () => {
@@ -59,9 +67,6 @@ function mockScript({ settings, data, strings, dark, preview }) {
       });
     })();`;
 }
-
-const flat = {};
-(function walk(o, p) { for (const [k, v] of Object.entries(o)) { if (v && typeof v === 'object') walk(v, p + k + '.'); else flat[p + k] = v; } }(locale, ''));
 
 /** Text-free version for the App Store previews: every text run becomes a soft bar. */
 async function blankText(page) {
@@ -82,12 +87,18 @@ async function blankText(page) {
   });
 }
 
-async function shoot(browser, { name, data, settings, width, dark, preview = false }) {
+async function shoot(browser, { name, data, settings, width, dark, preview = false, openEdit = false }) {
   const page = await browser.newPage({ viewport: { width, height: 800 }, deviceScaleFactor: 2 });
-  await page.addInitScript(mockScript({ settings, data, strings: flat, dark, preview }));
+  await page.exposeFunction('__mvNormalize', (body) => normalizeLayout({ cards: body && body.cards }));
+  await page.addInitScript(mockScript({ settings, data, dark, preview }));
   await page.goto('file://' + path.join(widgetDir, 'public', 'index.html'));
   await page.waitForFunction(() => window.__mvReady === true);
   await page.waitForTimeout(150);
+  if (openEdit) {
+    await page.click('.edit-btn');
+    await page.waitForSelector('.rows .row');
+    await page.waitForTimeout(100);
+  }
   if (preview) await blankText(page);
   const height = await page.evaluate(() => Math.ceil(document.getElementById('root').getBoundingClientRect().height));
   await page.setViewportSize({ width, height });
@@ -97,13 +108,40 @@ async function shoot(browser, { name, data, settings, width, dark, preview = fal
   return { file, height };
 }
 
+/** A scripted drag in the edit view: proves the pointer-event reorder and the PUT round trip. */
+async function dragCheck(browser, data) {
+  const page = await browser.newPage({ viewport: { width: 360, height: 800 }, deviceScaleFactor: 1 });
+  await page.exposeFunction('__mvNormalize', (body) => normalizeLayout({ cards: body && body.cards }));
+  await page.addInitScript(mockScript({ settings: { language: 'es' }, data, dark: false }));
+  await page.goto('file://' + path.join(widgetDir, 'public', 'index.html'));
+  await page.waitForFunction(() => window.__mvReady === true);
+  await page.click('.edit-btn');
+  await page.waitForSelector('.rows .row');
+  const handles = await page.$$('.rows .row .handle');
+  const first = await handles[0].boundingBox();
+  const fourth = await (await page.$$('.rows .row'))[3].boundingBox();
+  await page.mouse.move(first.x + first.width / 2, first.y + first.height / 2);
+  await page.mouse.down();
+  for (let i = 1; i <= 12; i++) await page.mouse.move(first.x + first.width / 2, first.y + ((fourth.y + fourth.height * 0.7 - first.y) * i) / 12);
+  await page.mouse.up();
+  const order = await page.$$eval('.rows .row', (rows) => rows.map((r) => r.dataset.id));
+  await page.click('.rows .row:nth-child(2) .switch');
+  await page.click('.btn.primary');
+  await page.waitForSelector('.edit-btn');
+  const put = await page.evaluate(() => window.__mvPut);
+  const haptics = await page.evaluate(() => window.__mvHaptics);
+  const shown = await page.$$eval('.wrap > *', (nodes) => nodes.map((n) => n.className.split(' ')[0]));
+  await page.close();
+  return { order, put, haptics, shown };
+}
+
 const browser = await chromium.launch();
 try {
+  const all = variants({ language: lang });
   if (previews) {
     // 1024×1024 transparent, the widget centred with the dashboard's rounded frame, no text.
-    const all = variants();
     for (const [theme, variant] of [['light', 'soon'], ['dark', 'night']]) {
-      const shot = await shoot(browser, { name: `_preview-${theme}-src`, data: all[variant], settings: { layout: 'full' }, width: 440, dark: theme === 'dark', preview: true });
+      const shot = await shoot(browser, { name: `_preview-${theme}-src`, data: all[variant], settings: { language: 'es' }, width: 440, dark: theme === 'dark', preview: true });
       const page = await browser.newPage({ viewport: { width: 1024, height: 1024 }, deviceScaleFactor: 1 });
       const png = fs.readFileSync(shot.file).toString('base64');
       const scale = Math.min(1, 960 / (shot.height * 2), 900 / 880);
@@ -121,14 +159,16 @@ try {
       fs.unlinkSync(raw);
       console.log('wrote', file);
     }
+  } else if (args.includes('--drag-check')) {
+    console.log(JSON.stringify(await dragCheck(browser, all.dry), null, 1));
   } else {
-    const all = variants();
-    for (const [variant, data] of Object.entries(all)) {
+    for (const [variant, base] of Object.entries(all)) {
       if (only.length && !only.includes(variant)) continue;
-      for (const layout of layouts) for (const width of widths) for (const theme of themes) {
-        const name = `${variant}${layout === 'full' ? '' : '-' + layout}-${theme}-${width}-${lang}`;
-        const r = await shoot(browser, { name, data, settings: { layout }, width, dark: theme === 'dark' });
-        console.log(name, r.height + 'px', path.relative(repo, r.file));
+      const data = LAYOUTS[layoutName] ? { ...base, layout: LAYOUTS[layoutName] } : base;
+      for (const width of widths) for (const theme of themes) {
+        const tag = [variant, layoutName !== 'default' ? layoutName : '', edit ? 'edit' : '', theme, width, language === 'auto' ? lang : language].filter(Boolean).join('-');
+        const r = await shoot(browser, { name: tag, data, settings: { language }, width, dark: theme === 'dark', openEdit: edit });
+        console.log(tag, r.height + 'px', path.relative(repo, r.file));
       }
     }
   }

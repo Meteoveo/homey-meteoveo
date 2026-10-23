@@ -285,6 +285,7 @@ class MeteoVeoDevice extends Homey.Device {
     return {
       state: 'ok',
       name: this.getName(),
+      language: this.homey.i18n.getLanguage(),
       timezone: this._tz(),
       level: home.level,
       place: home.place,

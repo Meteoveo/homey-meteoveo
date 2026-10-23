@@ -41,6 +41,8 @@ function bands(d, fn) {
 export function widgetData(data, extra = {}) {
   return {
     state: 'ok',
+    language: 'es',
+    layout: undefined,
     name: 'MeteoVeo ' + data.place.name,
     timezone: 'Europe/Madrid',
     level: data.level,
@@ -55,7 +57,7 @@ export function widgetData(data, extra = {}) {
   };
 }
 
-export function variants(nowMs = Date.now()) {
+export function variants({ nowMs = Date.now(), language = 'es' } = {}) {
   const dry = retime(base, nowMs);
 
   const soon = bands(retime(base, nowMs), (i) => (i < 3 ? 'none' : i < 5 ? 'light' : i < 8 ? 'moderate' : 'light'));
@@ -91,14 +93,15 @@ export function variants(nowMs = Date.now()) {
   noNowcast.current.iconKey = 'fatyolfelhos';
   noNowcast.place = { name: 'Santa Cruz de Tenerife', lat: 28.46, lon: -16.25, elevationM: 4 };
 
+  const lang = (d) => ({ ...d, language });
   return {
-    dry: widgetData(dry),
-    soon: widgetData(soon),
-    raining: widgetData(raining),
-    warning: widgetData(warning),
-    night: widgetData(night),
-    'no-nowcast': widgetData(noNowcast),
-    loading: { state: 'loading' },
-    'no-device': { state: 'no_device' },
+    dry: lang(widgetData(dry)),
+    soon: lang(widgetData(soon)),
+    raining: lang(widgetData(raining)),
+    warning: lang(widgetData(warning)),
+    night: lang(widgetData(night)),
+    'no-nowcast': lang(widgetData(noNowcast)),
+    loading: { state: 'loading', language },
+    'no-device': { state: 'no_device', language },
   };
 }
