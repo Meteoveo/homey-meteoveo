@@ -67,7 +67,9 @@
     "delete_more": "What exactly is deleted",
     "delete_confirm": "Type your e-mail address again to confirm",
     "delete_button": "Delete my account",
-    "delete_last_chance": "Your MeteoVeo account will be deleted for good. Continue?"
+    "delete_last_chance": "Your MeteoVeo account will be deleted for good. Continue?",
+    "location_now": "Now: __place__",
+    "location_save": "Save the location"
   },
   "errors": {
     "invalid_email": "That e-mail address does not look right.",

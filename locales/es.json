@@ -67,7 +67,9 @@
     "delete_more": "Qué se elimina exactamente",
     "delete_confirm": "Escribe otra vez tu correo para confirmar",
     "delete_button": "Eliminar mi cuenta",
-    "delete_last_chance": "Tu cuenta de MeteoVeo se eliminará para siempre. ¿Continuar?"
+    "delete_last_chance": "Tu cuenta de MeteoVeo se eliminará para siempre. ¿Continuar?",
+    "location_now": "Ahora: __place__",
+    "location_save": "Guardar la ubicación"
   },
   "errors": {
     "invalid_email": "Ese correo no parece correcto.",
