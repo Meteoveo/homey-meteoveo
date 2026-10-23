@@ -1,0 +1,91 @@
+{
+  "type": "enum",
+  "title": {
+    "en": "Weather",
+    "es": "Tiempo"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "insights": false,
+  "icon": "/assets/capabilities/condition.svg",
+  "values": [
+    {
+      "id": "napos",
+      "title": {
+        "en": "Clear",
+        "es": "Despejado"
+      }
+    },
+    {
+      "id": "reszben_felhos",
+      "title": {
+        "en": "Partly cloudy",
+        "es": "Parcialmente nuboso"
+      }
+    },
+    {
+      "id": "fatyolfelhos",
+      "title": {
+        "en": "High cloud",
+        "es": "Nubes altas"
+      }
+    },
+    {
+      "id": "borult",
+      "title": {
+        "en": "Overcast",
+        "es": "Cubierto"
+      }
+    },
+    {
+      "id": "eso",
+      "title": {
+        "en": "Rain",
+        "es": "Lluvia"
+      }
+    },
+    {
+      "id": "szemerkel",
+      "title": {
+        "en": "Drizzle",
+        "es": "Llovizna"
+      }
+    },
+    {
+      "id": "zapor",
+      "title": {
+        "en": "Showers",
+        "es": "Chubascos"
+      }
+    },
+    {
+      "id": "zivatar",
+      "title": {
+        "en": "Thunderstorm",
+        "es": "Tormenta"
+      }
+    },
+    {
+      "id": "havazas",
+      "title": {
+        "en": "Snow",
+        "es": "Nieve"
+      }
+    },
+    {
+      "id": "kod",
+      "title": {
+        "en": "Fog",
+        "es": "Niebla"
+      }
+    },
+    {
+      "id": "ismeretlen",
+      "title": {
+        "en": "Unknown",
+        "es": "Sin datos"
+      }
+    }
+  ]
+}

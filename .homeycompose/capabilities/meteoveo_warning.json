@@ -1,0 +1,42 @@
+{
+  "type": "enum",
+  "title": {
+    "en": "Weather warning",
+    "es": "Aviso meteorológico"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "insights": false,
+  "icon": "/assets/capabilities/warning.svg",
+  "values": [
+    {
+      "id": "none",
+      "title": {
+        "en": "None",
+        "es": "Ninguno"
+      }
+    },
+    {
+      "id": "yellow",
+      "title": {
+        "en": "Yellow",
+        "es": "Amarillo"
+      }
+    },
+    {
+      "id": "orange",
+      "title": {
+        "en": "Orange",
+        "es": "Naranja"
+      }
+    },
+    {
+      "id": "red",
+      "title": {
+        "en": "Red",
+        "es": "Rojo"
+      }
+    }
+  ]
+}

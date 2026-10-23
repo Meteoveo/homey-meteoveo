@@ -1,0 +1,459 @@
+{
+  "triggers": [
+    {
+      "id": "rain_expected",
+      "title": {
+        "en": "Rain is on its way",
+        "es": "Va a empezar a llover"
+      },
+      "hint": {
+        "en": "Once per dry spell, when the next-hour forecast first shows rain coming.",
+        "es": "Una vez por cada periodo seco, cuando la previsión de la próxima hora muestra lluvia en camino."
+      },
+      "tokens": [
+        {
+          "name": "minutes",
+          "type": "number",
+          "title": {
+            "en": "Minutes until rain",
+            "es": "Minutos hasta la lluvia"
+          },
+          "example": 25
+        }
+      ]
+    },
+    {
+      "id": "rain_started",
+      "title": {
+        "en": "It started raining",
+        "es": "Ha empezado a llover"
+      }
+    },
+    {
+      "id": "rain_stopped",
+      "title": {
+        "en": "It stopped raining",
+        "es": "Ha dejado de llover"
+      },
+      "hint": {
+        "en": "After ten minutes without rain, so a short break in a shower does not count.",
+        "es": "Tras diez minutos sin lluvia, para que una pausa breve en un chubasco no cuente."
+      }
+    },
+    {
+      "id": "warning_issued",
+      "title": {
+        "en": "A weather warning is issued",
+        "es": "Se activa un aviso"
+      },
+      "tokens": [
+        {
+          "name": "level",
+          "type": "string",
+          "title": {
+            "en": "Level",
+            "es": "Nivel"
+          },
+          "example": {
+            "en": "Orange",
+            "es": "Naranja"
+          }
+        },
+        {
+          "name": "phenomenon",
+          "type": "string",
+          "title": {
+            "en": "Phenomenon",
+            "es": "Fenómeno"
+          },
+          "example": "Lluvias"
+        },
+        {
+          "name": "headline",
+          "type": "string",
+          "title": {
+            "en": "Text (AEMET)",
+            "es": "Texto (AEMET)"
+          },
+          "example": "Acumulación de 40 mm en 12 horas"
+        },
+        {
+          "name": "onset",
+          "type": "string",
+          "title": {
+            "en": "Starts",
+            "es": "Empieza"
+          },
+          "example": "23/10 20:00"
+        },
+        {
+          "name": "expires",
+          "type": "string",
+          "title": {
+            "en": "Ends",
+            "es": "Termina"
+          },
+          "example": "24/10 08:00"
+        }
+      ]
+    },
+    {
+      "id": "condition_changed",
+      "title": {
+        "en": "The weather changed",
+        "es": "Ha cambiado el tiempo"
+      },
+      "tokens": [
+        {
+          "name": "condition",
+          "type": "string",
+          "title": {
+            "en": "Weather",
+            "es": "Tiempo"
+          },
+          "example": {
+            "en": "Showers",
+            "es": "Chubascos"
+          }
+        }
+      ]
+    }
+  ],
+  "conditions": [
+    {
+      "id": "rain_within",
+      "title": {
+        "en": "It will !{{|not }}rain soon",
+        "es": "!{{Va|No va}} a llover pronto"
+      },
+      "titleFormatted": {
+        "en": "It will !{{|not }}rain within [[minutes]]",
+        "es": "!{{Va|No va}} a llover en [[minutes]]"
+      },
+      "args": [
+        {
+          "name": "minutes",
+          "type": "dropdown",
+          "title": {
+            "en": "Time",
+            "es": "Tiempo"
+          },
+          "values": [
+            {
+              "id": "10",
+              "title": {
+                "en": "10 minutes",
+                "es": "10 minutos"
+              }
+            },
+            {
+              "id": "20",
+              "title": {
+                "en": "20 minutes",
+                "es": "20 minutos"
+              }
+            },
+            {
+              "id": "30",
+              "title": {
+                "en": "30 minutes",
+                "es": "30 minutos"
+              }
+            },
+            {
+              "id": "60",
+              "title": {
+                "en": "1 hour",
+                "es": "1 hora"
+              }
+            },
+            {
+              "id": "120",
+              "title": {
+                "en": "2 hours",
+                "es": "2 horas"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "warning_active",
+      "title": {
+        "en": "A weather warning is !{{|not }}active",
+        "es": "!{{Hay|No hay}} un aviso activo"
+      },
+      "titleFormatted": {
+        "en": "A warning of level [[level]] or higher is !{{|not }}active",
+        "es": "!{{Hay|No hay}} un aviso de nivel [[level]] o superior"
+      },
+      "args": [
+        {
+          "name": "level",
+          "type": "dropdown",
+          "title": {
+            "en": "Level",
+            "es": "Nivel"
+          },
+          "values": [
+            {
+              "id": "yellow",
+              "title": {
+                "en": "yellow",
+                "es": "amarillo"
+              }
+            },
+            {
+              "id": "orange",
+              "title": {
+                "en": "orange",
+                "es": "naranja"
+              }
+            },
+            {
+              "id": "red",
+              "title": {
+                "en": "red",
+                "es": "rojo"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "report_temperature",
+      "title": {
+        "en": "Send temperature",
+        "es": "Enviar temperatura"
+      },
+      "titleFormatted": {
+        "en": "Send temperature [[value]] °C",
+        "es": "Enviar temperatura [[value]] °C"
+      },
+      "hint": {
+        "en": "Forwards a reading from your own weather station to your MeteoVeo station.",
+        "es": "Envía una medida de tu propia estación a tu estación de MeteoVeo."
+      },
+      "args": [
+        {
+          "name": "value",
+          "type": "number",
+          "min": -60,
+          "max": 65,
+          "step": 0.1,
+          "title": {
+            "en": "Value",
+            "es": "Valor"
+          }
+        }
+      ]
+    },
+    {
+      "id": "report_humidity",
+      "title": {
+        "en": "Send humidity",
+        "es": "Enviar humedad"
+      },
+      "titleFormatted": {
+        "en": "Send humidity [[value]] %",
+        "es": "Enviar humedad [[value]] %"
+      },
+      "hint": {
+        "en": "Forwards a reading from your own weather station to your MeteoVeo station.",
+        "es": "Envía una medida de tu propia estación a tu estación de MeteoVeo."
+      },
+      "args": [
+        {
+          "name": "value",
+          "type": "number",
+          "min": 0,
+          "max": 100,
+          "step": 1,
+          "title": {
+            "en": "Value",
+            "es": "Valor"
+          }
+        }
+      ]
+    },
+    {
+      "id": "report_pressure",
+      "title": {
+        "en": "Send station pressure",
+        "es": "Enviar presión de la estación"
+      },
+      "titleFormatted": {
+        "en": "Send station pressure [[value]] hPa",
+        "es": "Enviar presión de la estación [[value]] hPa"
+      },
+      "hint": {
+        "en": "Forwards a reading from your own weather station to your MeteoVeo station.",
+        "es": "Envía una medida de tu propia estación a tu estación de MeteoVeo."
+      },
+      "args": [
+        {
+          "name": "value",
+          "type": "number",
+          "min": 500,
+          "max": 1100,
+          "step": 0.1,
+          "title": {
+            "en": "Value",
+            "es": "Valor"
+          }
+        }
+      ]
+    },
+    {
+      "id": "report_wind_speed",
+      "title": {
+        "en": "Send wind speed",
+        "es": "Enviar velocidad del viento"
+      },
+      "titleFormatted": {
+        "en": "Send wind speed [[value]] km/h",
+        "es": "Enviar velocidad del viento [[value]] km/h"
+      },
+      "hint": {
+        "en": "Forwards a reading from your own weather station to your MeteoVeo station.",
+        "es": "Envía una medida de tu propia estación a tu estación de MeteoVeo."
+      },
+      "args": [
+        {
+          "name": "value",
+          "type": "number",
+          "min": 0,
+          "max": 400,
+          "step": 0.1,
+          "title": {
+            "en": "Value",
+            "es": "Valor"
+          }
+        }
+      ]
+    },
+    {
+      "id": "report_wind_gust",
+      "title": {
+        "en": "Send wind gust",
+        "es": "Enviar racha de viento"
+      },
+      "titleFormatted": {
+        "en": "Send wind gust [[value]] km/h",
+        "es": "Enviar racha de viento [[value]] km/h"
+      },
+      "hint": {
+        "en": "Forwards a reading from your own weather station to your MeteoVeo station.",
+        "es": "Envía una medida de tu propia estación a tu estación de MeteoVeo."
+      },
+      "args": [
+        {
+          "name": "value",
+          "type": "number",
+          "min": 0,
+          "max": 400,
+          "step": 0.1,
+          "title": {
+            "en": "Value",
+            "es": "Valor"
+          }
+        }
+      ]
+    },
+    {
+      "id": "report_wind_direction",
+      "title": {
+        "en": "Send wind direction",
+        "es": "Enviar dirección del viento"
+      },
+      "titleFormatted": {
+        "en": "Send wind direction [[value]]°",
+        "es": "Enviar dirección del viento [[value]]°"
+      },
+      "hint": {
+        "en": "Forwards a reading from your own weather station to your MeteoVeo station.",
+        "es": "Envía una medida de tu propia estación a tu estación de MeteoVeo."
+      },
+      "args": [
+        {
+          "name": "value",
+          "type": "number",
+          "min": 0,
+          "max": 360,
+          "step": 1,
+          "title": {
+            "en": "Value",
+            "es": "Valor"
+          }
+        }
+      ]
+    },
+    {
+      "id": "report_daily_rain",
+      "title": {
+        "en": "Send rain today",
+        "es": "Enviar lluvia de hoy"
+      },
+      "titleFormatted": {
+        "en": "Send rain today [[value]] mm",
+        "es": "Enviar lluvia de hoy [[value]] mm"
+      },
+      "hint": {
+        "en": "Forwards a reading from your own weather station to your MeteoVeo station.",
+        "es": "Envía una medida de tu propia estación a tu estación de MeteoVeo."
+      },
+      "args": [
+        {
+          "name": "value",
+          "type": "number",
+          "min": 0,
+          "max": 1000,
+          "step": 0.1,
+          "title": {
+            "en": "Value",
+            "es": "Valor"
+          }
+        }
+      ]
+    },
+    {
+      "id": "report_solar_radiation",
+      "title": {
+        "en": "Send solar radiation",
+        "es": "Enviar radiación solar"
+      },
+      "titleFormatted": {
+        "en": "Send solar radiation [[value]] W/m²",
+        "es": "Enviar radiación solar [[value]] W/m²"
+      },
+      "hint": {
+        "en": "Forwards a reading from your own weather station to your MeteoVeo station.",
+        "es": "Envía una medida de tu propia estación a tu estación de MeteoVeo."
+      },
+      "args": [
+        {
+          "name": "value",
+          "type": "number",
+          "min": 0,
+          "max": 2000,
+          "step": 1,
+          "title": {
+            "en": "Value",
+            "es": "Valor"
+          }
+        }
+      ]
+    },
+    {
+      "id": "refresh",
+      "title": {
+        "en": "Update the forecast now",
+        "es": "Actualizar la previsión ahora"
+      }
+    }
+  ]
+}

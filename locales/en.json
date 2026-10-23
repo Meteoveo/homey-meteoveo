@@ -1,0 +1,128 @@
+{
+  "pair": {
+    "continue": "Continue",
+    "finish": "Finish",
+    "account": {
+      "title": "Your MeteoVeo account",
+      "subtitle": "Free. Your password is used once to sign in and is never stored on your Homey.",
+      "new": "Create a new account",
+      "existing": "I already have an account",
+      "email": "E-mail",
+      "password": "Password",
+      "password_hint": "At least 8 characters.",
+      "terms_before": "I accept the ",
+      "terms_link": "terms of use",
+      "terms_between": " and the ",
+      "privacy_link": "privacy policy",
+      "terms_after": ".",
+      "marketing": "Send me MeteoVeo news by e-mail (optional).",
+      "passwordless": "Did you sign up with Google, Apple or a passkey? Set a password first in the MeteoVeo app (Account → Password)."
+    },
+    "verify": {
+      "title": "Check your e-mail",
+      "subtitle": "We sent you a 6-digit code.",
+      "code": "Code",
+      "hint": "Nothing arrived? Look in the spam folder; the code is valid for 15 minutes."
+    },
+    "location": {
+      "title": "Where is home?",
+      "subtitle": "Your Homey's location, rounded to about 1 km. You can change it.",
+      "lat": "Latitude",
+      "lon": "Longitude",
+      "hint": "MeteoVeo covers Spain, the Balearic and Canary Islands, Ceuta and Melilla."
+    },
+    "station": {
+      "title": "Do you have a weather station?",
+      "subtitle": "Optional. Its readings make the forecast for your home more accurate, and you can follow your station in the MeteoVeo app.",
+      "no": "No, just the forecast",
+      "devices": "Yes, choose its devices in Homey",
+      "flow": "Yes, I will send readings with Flows",
+      "height": "Sensor height above ground (cm)",
+      "height_hint": "Used to compare your readings with nearby stations.",
+      "flow_hint": "After pairing, add a Flow such as: When the temperature of your station changes → MeteoVeo: Send temperature.",
+      "none": "Not this one"
+    }
+  },
+  "measurements": {
+    "temperature": "Temperature",
+    "humidity": "Humidity",
+    "pressure": "Station pressure",
+    "wind_speed": "Wind speed",
+    "wind_gust": "Wind gust",
+    "wind_direction": "Wind direction",
+    "daily_rain": "Rain counter"
+  },
+  "repair": {
+    "title": "MeteoVeo",
+    "login": "Sign in again",
+    "login_hint": "If this location shows as unavailable, sign in again to issue a new key. Your settings stay.",
+    "location": "Change the location",
+    "delete": "Delete my MeteoVeo account",
+    "delete_explain": "This deletes your MeteoVeo account, your saved places and your station data, on every device. Your public observations stay, without your name.",
+    "delete_more": "What exactly is deleted",
+    "delete_confirm": "Type your e-mail address again to confirm",
+    "delete_button": "Delete my account",
+    "delete_last_chance": "Your MeteoVeo account will be deleted for good. Continue?"
+  },
+  "errors": {
+    "invalid_email": "That e-mail address does not look right.",
+    "weak_password": "The password needs at least 8 characters.",
+    "terms_required": "To create an account, accept the terms of use and the privacy policy.",
+    "invalid_code": "That code is not right, or it has expired.",
+    "invalid_credentials": "Wrong e-mail or password. If you signed up with Google, Apple or a passkey, set a password in the MeteoVeo app first.",
+    "registration_closed": "New accounts cannot be created right now. Please try again later.",
+    "invalid_location": "That location is outside the area MeteoVeo covers (Spain and its islands).",
+    "too_many_keys": "Your account already has 5 connected locations. Remove one in Home Assistant or Homey first.",
+    "unknown_station": "That station does not belong to your account.",
+    "location_required": "Choose a location first.",
+    "not_signed_in": "Sign in first.",
+    "signup_first": "Start again from the first step.",
+    "confirm_mismatch": "The e-mail addresses do not match.",
+    "password_required": "Enter your password.",
+    "invalid_password": "Wrong password.",
+    "unavailable": "MeteoVeo cannot be reached right now. It will try again by itself.",
+    "unknown": "Something went wrong. Please try again.",
+    "signed_out": "Not signed in. Use Repair to sign in again.",
+    "key_revoked": "The connection was revoked. Use Repair to sign in again.",
+    "no_nowcast": "There is no next-hour forecast for this location right now.",
+    "no_station": "This location has no weather station. Remove it and pair it again to add one.",
+    "measurement_from_device": "This measurement already comes from a device chosen during pairing.",
+    "station_key_rejected": "MeteoVeo rejected the station key. Remove this location and pair it again.",
+    "account_deleted": "Your MeteoVeo account was deleted.",
+    "no_sources": "Choose at least one device, or pick the Flow option."
+  },
+  "levels": {
+    "none": "None",
+    "yellow": "Yellow",
+    "orange": "Orange",
+    "red": "Red"
+  },
+  "conditions": {
+    "napos": "Clear",
+    "reszben_felhos": "Partly cloudy",
+    "fatyolfelhos": "High cloud",
+    "borult": "Overcast",
+    "eso": "Rain",
+    "szemerkel": "Drizzle",
+    "zapor": "Showers",
+    "zivatar": "Thunderstorm",
+    "havazas": "Snow",
+    "kod": "Fog",
+    "ismeretlen": "No data"
+  },
+  "notifications": {
+    "account_deleted": "Your MeteoVeo account was deleted. You can now remove the MeteoVeo devices."
+  },
+  "widget": {
+    "no_nowcast": "No next-hour forecast here",
+    "rain_until": "Rain until __time__",
+    "rain_now": "Raining now",
+    "rain_from": "Rain from __time__",
+    "dry": "No rain in the next hour",
+    "now": "Now",
+    "age": "__minutes__ min ago",
+    "loading": "Loading…",
+    "unavailable": "MeteoVeo is not available",
+    "no_device": "Add a MeteoVeo location first"
+  }
+}

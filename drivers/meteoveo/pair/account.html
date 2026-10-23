@@ -1,0 +1,109 @@
+<header class="homey-header">
+  <h1 class="homey-title" data-i18n="pair.account.title"></h1>
+  <p class="homey-subtitle" data-i18n="pair.account.subtitle"></p>
+</header>
+
+<form class="homey-form" id="form" onsubmit="return false">
+  <fieldset class="homey-form-radio-set">
+    <label class="homey-form-radio">
+      <input class="homey-form-radio-input" type="radio" name="mode" value="signup" checked />
+      <span class="homey-form-radio-checkmark"></span>
+      <span class="homey-form-radio-text" data-i18n="pair.account.new"></span>
+    </label>
+    <label class="homey-form-radio">
+      <input class="homey-form-radio-input" type="radio" name="mode" value="login" />
+      <span class="homey-form-radio-checkmark"></span>
+      <span class="homey-form-radio-text" data-i18n="pair.account.existing"></span>
+    </label>
+  </fieldset>
+
+  <div class="homey-form-group">
+    <label class="homey-form-label" for="email" data-i18n="pair.account.email"></label>
+    <input class="homey-form-input" id="email" type="email" autocomplete="email" />
+  </div>
+  <div class="homey-form-group">
+    <label class="homey-form-label" for="password" data-i18n="pair.account.password"></label>
+    <input class="homey-form-input" id="password" type="password" autocomplete="current-password" />
+    <p class="mv-hint" id="password-hint" data-i18n="pair.account.password_hint"></p>
+  </div>
+
+  <div class="homey-form-group" id="consents">
+    <fieldset class="homey-form-checkbox-set">
+      <label class="homey-form-checkbox">
+        <input class="homey-form-checkbox-input" type="checkbox" id="terms" />
+        <span class="homey-form-checkbox-checkmark"></span>
+        <span class="homey-form-checkbox-text" id="terms-text"></span>
+      </label>
+      <label class="homey-form-checkbox">
+        <input class="homey-form-checkbox-input" type="checkbox" id="marketing" />
+        <span class="homey-form-checkbox-checkmark"></span>
+        <span class="homey-form-checkbox-text" data-i18n="pair.account.marketing"></span>
+      </label>
+    </fieldset>
+  </div>
+
+  <p class="mv-hint" id="passwordless" data-i18n="pair.account.passwordless" style="display:none"></p>
+  <button class="homey-button-primary-full" id="submit" data-i18n="pair.continue"></button>
+</form>
+
+<style>
+  .mv-hint { font-size: 13px; opacity: .7; margin: 6px 0 0; }
+  .mv-hint a { color: inherit; text-decoration: underline; }
+</style>
+
+<script type="text/javascript">
+  const t = (key) => Homey.__(key);
+  document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
+  // The terms sentence carries two links, so it is built from parts, not innerHTML of a translation.
+  const termsText = document.getElementById('terms-text');
+  termsText.append(t('pair.account.terms_before'));
+  for (const [key, href, after] of [
+    ['pair.account.terms_link', 'https://www.meteoveo.com/legal/terminos', 'pair.account.terms_between'],
+    ['pair.account.privacy_link', 'https://www.meteoveo.com/legal/privacidad', 'pair.account.terms_after'],
+  ]) {
+    const a = document.createElement('a');
+    a.href = href; a.target = '_blank'; a.rel = 'noopener'; a.textContent = t(key);
+    a.addEventListener('click', (e) => { e.preventDefault(); Homey.openURL(href); });
+    termsText.append(a, t(after));
+  }
+
+  const mode = () => document.querySelector('input[name="mode"]:checked').value;
+  function render() {
+    const signup = mode() === 'signup';
+    document.getElementById('consents').style.display = signup ? '' : 'none';
+    document.getElementById('password-hint').style.display = signup ? '' : 'none';
+    document.getElementById('passwordless').style.display = signup ? 'none' : '';
+    document.getElementById('password').autocomplete = signup ? 'new-password' : 'current-password';
+  }
+  document.querySelectorAll('input[name="mode"]').forEach((el) => el.addEventListener('change', render));
+  render();
+
+  function explain(err) {
+    const key = 'errors.' + (err && err.message);
+    const text = t(key);
+    Homey.alert(text && text !== key ? text : t('errors.unknown'), 'error');
+  }
+
+  document.getElementById('submit').addEventListener('click', async () => {
+    const data = {
+      email: document.getElementById('email').value,
+      password: document.getElementById('password').value,
+    };
+    Homey.showLoadingOverlay();
+    try {
+      if (mode() === 'signup') {
+        data.acceptTerms = document.getElementById('terms').checked;
+        data.marketingConsent = document.getElementById('marketing').checked;
+        await Homey.emit('signup', data);
+        Homey.showView('verify');
+      } else {
+        await Homey.emit('login', data);
+        Homey.showView('location');
+      }
+    } catch (err) {
+      explain(err);
+    } finally {
+      Homey.hideLoadingOverlay();
+    }
+  });
+</script>

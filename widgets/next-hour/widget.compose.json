@@ -1,0 +1,23 @@
+{
+  "name": {
+    "en": "Next hour",
+    "es": "Próxima hora"
+  },
+  "height": 248,
+  "settings": [
+    {
+      "id": "device",
+      "type": "autocomplete",
+      "title": {
+        "en": "Location",
+        "es": "Ubicación"
+      }
+    }
+  ],
+  "api": {
+    "getForecast": {
+      "method": "GET",
+      "path": "/forecast"
+    }
+  }
+}

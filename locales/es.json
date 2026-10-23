@@ -1,0 +1,128 @@
+{
+  "pair": {
+    "continue": "Continuar",
+    "finish": "Terminar",
+    "account": {
+      "title": "Tu cuenta de MeteoVeo",
+      "subtitle": "Gratis. Tu contraseña solo se usa para entrar y nunca se guarda en tu Homey.",
+      "new": "Crear una cuenta nueva",
+      "existing": "Ya tengo cuenta",
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "password_hint": "Al menos 8 caracteres.",
+      "terms_before": "Acepto las ",
+      "terms_link": "condiciones de uso",
+      "terms_between": " y la ",
+      "privacy_link": "política de privacidad",
+      "terms_after": ".",
+      "marketing": "Quiero recibir novedades de MeteoVeo por correo (opcional).",
+      "passwordless": "¿Te registraste con Google, Apple o una llave de acceso? Primero crea una contraseña en la app de MeteoVeo (Cuenta → Contraseña)."
+    },
+    "verify": {
+      "title": "Revisa tu correo",
+      "subtitle": "Te hemos enviado un código de 6 cifras.",
+      "code": "Código",
+      "hint": "¿No te ha llegado? Mira en la carpeta de spam; el código vale 15 minutos."
+    },
+    "location": {
+      "title": "¿Dónde está tu casa?",
+      "subtitle": "La ubicación de tu Homey, redondeada a 1 km aproximadamente. Puedes cambiarla.",
+      "lat": "Latitud",
+      "lon": "Longitud",
+      "hint": "MeteoVeo cubre España, Baleares, Canarias, Ceuta y Melilla."
+    },
+    "station": {
+      "title": "¿Tienes una estación meteorológica?",
+      "subtitle": "Opcional. Sus medidas afinan la previsión de tu casa, y puedes seguir tu estación en la app de MeteoVeo.",
+      "no": "No, solo quiero la previsión",
+      "devices": "Sí, elijo sus dispositivos en Homey",
+      "flow": "Sí, enviaré las medidas con Flows",
+      "height": "Altura del sensor sobre el suelo (cm)",
+      "height_hint": "Sirve para comparar tus medidas con las de las estaciones cercanas.",
+      "flow_hint": "Después, crea un Flow como: Cuando cambie la temperatura de tu estación → MeteoVeo: Enviar temperatura.",
+      "none": "Ninguno"
+    }
+  },
+  "measurements": {
+    "temperature": "Temperatura",
+    "humidity": "Humedad",
+    "pressure": "Presión de la estación",
+    "wind_speed": "Velocidad del viento",
+    "wind_gust": "Racha de viento",
+    "wind_direction": "Dirección del viento",
+    "daily_rain": "Contador de lluvia"
+  },
+  "repair": {
+    "title": "MeteoVeo",
+    "login": "Volver a iniciar sesión",
+    "login_hint": "Si esta ubicación aparece como no disponible, inicia sesión de nuevo para crear una clave nueva. Tus ajustes se mantienen.",
+    "location": "Cambiar la ubicación",
+    "delete": "Eliminar mi cuenta de MeteoVeo",
+    "delete_explain": "Se eliminan tu cuenta de MeteoVeo, tus lugares guardados y los datos de tu estación, en todos tus dispositivos. Tus observaciones públicas se quedan, sin tu nombre.",
+    "delete_more": "Qué se elimina exactamente",
+    "delete_confirm": "Escribe otra vez tu correo para confirmar",
+    "delete_button": "Eliminar mi cuenta",
+    "delete_last_chance": "Tu cuenta de MeteoVeo se eliminará para siempre. ¿Continuar?"
+  },
+  "errors": {
+    "invalid_email": "Ese correo no parece correcto.",
+    "weak_password": "La contraseña necesita al menos 8 caracteres.",
+    "terms_required": "Para crear la cuenta, acepta las condiciones de uso y la política de privacidad.",
+    "invalid_code": "El código no es correcto o ha caducado.",
+    "invalid_credentials": "Correo o contraseña incorrectos. Si te registraste con Google, Apple o una llave de acceso, crea antes una contraseña en la app de MeteoVeo.",
+    "registration_closed": "Ahora mismo no se pueden crear cuentas nuevas. Inténtalo más tarde.",
+    "invalid_location": "Esa ubicación está fuera de la zona que cubre MeteoVeo (España y sus islas).",
+    "too_many_keys": "Tu cuenta ya tiene 5 ubicaciones conectadas. Quita una antes en Home Assistant o en Homey.",
+    "unknown_station": "Esa estación no es de tu cuenta.",
+    "location_required": "Primero elige una ubicación.",
+    "not_signed_in": "Primero inicia sesión.",
+    "signup_first": "Vuelve a empezar desde el primer paso.",
+    "confirm_mismatch": "Los correos no coinciden.",
+    "password_required": "Escribe tu contraseña.",
+    "invalid_password": "Contraseña incorrecta.",
+    "unavailable": "Ahora mismo no se puede conectar con MeteoVeo. Lo volverá a intentar solo.",
+    "unknown": "Algo ha fallado. Inténtalo de nuevo.",
+    "signed_out": "No has iniciado sesión. Usa Reparar para volver a entrar.",
+    "key_revoked": "La conexión se ha revocado. Usa Reparar para volver a entrar.",
+    "no_nowcast": "Ahora mismo no hay previsión de la próxima hora para esta ubicación.",
+    "no_station": "Esta ubicación no tiene estación. Quítala y vuelve a añadirla para conectar una.",
+    "measurement_from_device": "Esta medida ya llega de un dispositivo elegido al conectar.",
+    "station_key_rejected": "MeteoVeo ha rechazado la clave de la estación. Quita esta ubicación y vuelve a añadirla.",
+    "account_deleted": "Tu cuenta de MeteoVeo se ha eliminado.",
+    "no_sources": "Elige al menos un dispositivo, o la opción de Flows."
+  },
+  "levels": {
+    "none": "Ninguno",
+    "yellow": "Amarillo",
+    "orange": "Naranja",
+    "red": "Rojo"
+  },
+  "conditions": {
+    "napos": "Despejado",
+    "reszben_felhos": "Parcialmente nuboso",
+    "fatyolfelhos": "Nubes altas",
+    "borult": "Cubierto",
+    "eso": "Lluvia",
+    "szemerkel": "Llovizna",
+    "zapor": "Chubascos",
+    "zivatar": "Tormenta",
+    "havazas": "Nieve",
+    "kod": "Niebla",
+    "ismeretlen": "Sin datos"
+  },
+  "notifications": {
+    "account_deleted": "Tu cuenta de MeteoVeo se ha eliminado. Ya puedes quitar los dispositivos de MeteoVeo."
+  },
+  "widget": {
+    "no_nowcast": "Sin previsión de la próxima hora aquí",
+    "rain_until": "Lluvia hasta las __time__",
+    "rain_now": "Está lloviendo",
+    "rain_from": "Lluvia desde las __time__",
+    "dry": "Sin lluvia en la próxima hora",
+    "now": "Ahora",
+    "age": "hace __minutes__ min",
+    "loading": "Cargando…",
+    "unavailable": "MeteoVeo no está disponible",
+    "no_device": "Añade antes una ubicación de MeteoVeo"
+  }
+}
