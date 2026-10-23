@@ -96,7 +96,8 @@
     "measurement_from_device": "Esta medida ya llega de un dispositivo elegido al conectar.",
     "station_key_rejected": "MeteoVeo ha rechazado la clave de la estación. Quita esta ubicación y vuelve a añadirla.",
     "account_deleted": "Tu cuenta de MeteoVeo se ha eliminado.",
-    "no_sources": "Elige al menos un dispositivo, o la opción de Flows."
+    "no_sources": "Elige al menos un dispositivo, o la opción de Flows.",
+    "no_forecast": "Todavía no hay previsión para ese día."
   },
   "levels": {
     "none": "Ninguno",
@@ -119,5 +120,18 @@
   },
   "notifications": {
     "account_deleted": "Tu cuenta de MeteoVeo se ha eliminado. Ya puedes quitar los dispositivos de MeteoVeo."
+  },
+  "intensity": {
+    "none": "ninguna",
+    "light": "débil",
+    "moderate": "moderada",
+    "heavy": "fuerte"
+  },
+  "forecast": {
+    "day_0": "Hoy",
+    "day_1": "Mañana",
+    "day_2": "Pasado mañana",
+    "sentence": "__day__: __condition__, __max__°/__min__°, __chance__ % de lluvia",
+    "unknown": "–"
   }
 }

@@ -89,6 +89,18 @@
               "es": "Minutos hasta la lluvia"
             },
             "example": 25
+          },
+          {
+            "name": "intensity",
+            "type": "string",
+            "title": {
+              "en": "Intensity",
+              "es": "Intensidad"
+            },
+            "example": {
+              "en": "moderate",
+              "es": "moderada"
+            }
           }
         ],
         "args": [
@@ -222,6 +234,89 @@
             "filter": "driver_id=meteoveo"
           }
         ]
+      },
+      {
+        "id": "rain_ending",
+        "title": {
+          "en": "Rain is about to stop",
+          "es": "Va a dejar de llover"
+        },
+        "hint": {
+          "en": "Once per shower, when the next-hour forecast first shows when the rain ends.",
+          "es": "Una vez por chubasco, cuando la previsión de la próxima hora muestra por primera vez cuándo para."
+        },
+        "tokens": [
+          {
+            "name": "minutes",
+            "type": "number",
+            "title": {
+              "en": "Minutes until it stops",
+              "es": "Minutos hasta que pare"
+            },
+            "example": 15
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=meteoveo"
+          }
+        ]
+      },
+      {
+        "id": "warning_level_changed",
+        "title": {
+          "en": "The warning level changed",
+          "es": "Cambia el nivel de aviso"
+        },
+        "tokens": [
+          {
+            "name": "level",
+            "type": "string",
+            "title": {
+              "en": "New level",
+              "es": "Nivel nuevo"
+            },
+            "example": {
+              "en": "Orange",
+              "es": "Naranja"
+            }
+          },
+          {
+            "name": "previous",
+            "type": "string",
+            "title": {
+              "en": "Previous level",
+              "es": "Nivel anterior"
+            },
+            "example": {
+              "en": "Yellow",
+              "es": "Amarillo"
+            }
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=meteoveo"
+          }
+        ]
+      },
+      {
+        "id": "warning_cleared",
+        "title": {
+          "en": "No more active warnings",
+          "es": "Ya no hay avisos activos"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=meteoveo"
+          }
+        ]
       }
     ],
     "conditions": [
@@ -283,6 +378,13 @@
                   "en": "2 hours",
                   "es": "2 horas"
                 }
+              },
+              {
+                "id": "180",
+                "title": {
+                  "en": "3 hours",
+                  "es": "3 horas"
+                }
               }
             ]
           }
@@ -334,6 +436,275 @@
                 }
               }
             ]
+          }
+        ]
+      },
+      {
+        "id": "rain_intensity_within",
+        "title": {
+          "en": "It will !{{|not }}rain hard soon",
+          "es": "!{{Va|No va}} a llover con fuerza pronto"
+        },
+        "titleFormatted": {
+          "en": "It will !{{|not }}rain [[intensity]] or heavier within [[minutes]]",
+          "es": "!{{Va|No va}} a llover de forma [[intensity]] o más en [[minutes]]"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=meteoveo"
+          },
+          {
+            "name": "intensity",
+            "type": "dropdown",
+            "title": {
+              "en": "Intensity",
+              "es": "Intensidad"
+            },
+            "values": [
+              {
+                "id": "moderate",
+                "title": {
+                  "en": "moderate",
+                  "es": "moderada"
+                }
+              },
+              {
+                "id": "heavy",
+                "title": {
+                  "en": "heavy",
+                  "es": "fuerte"
+                }
+              }
+            ]
+          },
+          {
+            "name": "minutes",
+            "type": "dropdown",
+            "title": {
+              "en": "Within",
+              "es": "Plazo"
+            },
+            "values": [
+              {
+                "id": "30",
+                "title": {
+                  "en": "30 minutes",
+                  "es": "30 minutos"
+                }
+              },
+              {
+                "id": "60",
+                "title": {
+                  "en": "1 hour",
+                  "es": "1 hora"
+                }
+              },
+              {
+                "id": "120",
+                "title": {
+                  "en": "2 hours",
+                  "es": "2 horas"
+                }
+              },
+              {
+                "id": "180",
+                "title": {
+                  "en": "3 hours",
+                  "es": "3 horas"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "warning_type_active",
+        "title": {
+          "en": "A warning of a kind is !{{|not }}active",
+          "es": "!{{Hay|No hay}} un aviso de un tipo"
+        },
+        "titleFormatted": {
+          "en": "A [[phenomenon]] warning of level [[level]] or higher is !{{|not }}active",
+          "es": "!{{Hay|No hay}} un aviso por [[phenomenon]] de nivel [[level]] o superior"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=meteoveo"
+          },
+          {
+            "name": "phenomenon",
+            "type": "dropdown",
+            "title": {
+              "en": "Kind",
+              "es": "Tipo"
+            },
+            "values": [
+              {
+                "id": "PR",
+                "title": {
+                  "en": "rain",
+                  "es": "lluvias"
+                }
+              },
+              {
+                "id": "TO",
+                "title": {
+                  "en": "thunderstorms",
+                  "es": "tormentas"
+                }
+              },
+              {
+                "id": "NE",
+                "title": {
+                  "en": "snow",
+                  "es": "nevadas"
+                }
+              },
+              {
+                "id": "VI",
+                "title": {
+                  "en": "wind",
+                  "es": "viento"
+                }
+              },
+              {
+                "id": "CO",
+                "title": {
+                  "en": "coastal hazards",
+                  "es": "fenómenos costeros"
+                }
+              },
+              {
+                "id": "CA",
+                "title": {
+                  "en": "heat",
+                  "es": "calor"
+                }
+              },
+              {
+                "id": "BF",
+                "title": {
+                  "en": "cold",
+                  "es": "frío"
+                }
+              },
+              {
+                "id": "NI",
+                "title": {
+                  "en": "fog",
+                  "es": "nieblas"
+                }
+              },
+              {
+                "id": "PO",
+                "title": {
+                  "en": "airborne dust",
+                  "es": "polvo en suspensión"
+                }
+              },
+              {
+                "id": "DP",
+                "title": {
+                  "en": "snowmelt",
+                  "es": "deshielo"
+                }
+              },
+              {
+                "id": "AL",
+                "title": {
+                  "en": "avalanches",
+                  "es": "aludes"
+                }
+              }
+            ]
+          },
+          {
+            "name": "level",
+            "type": "dropdown",
+            "title": {
+              "en": "Level",
+              "es": "Nivel"
+            },
+            "values": [
+              {
+                "id": "yellow",
+                "title": {
+                  "en": "yellow",
+                  "es": "amarillo"
+                }
+              },
+              {
+                "id": "orange",
+                "title": {
+                  "en": "orange",
+                  "es": "naranja"
+                }
+              },
+              {
+                "id": "red",
+                "title": {
+                  "en": "red",
+                  "es": "rojo"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "rain_chance_above",
+        "title": {
+          "en": "The chance of rain is !{{|not }}above a value",
+          "es": "La probabilidad de lluvia !{{es|no es}} mayor que un valor"
+        },
+        "titleFormatted": {
+          "en": "The chance of rain [[day]] is !{{|not }}above [[percent]] %",
+          "es": "La probabilidad de lluvia de [[day]] !{{es|no es}} mayor que [[percent]] %"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=meteoveo"
+          },
+          {
+            "name": "day",
+            "type": "dropdown",
+            "title": {
+              "en": "Day",
+              "es": "Día"
+            },
+            "values": [
+              {
+                "id": "0",
+                "title": {
+                  "en": "today",
+                  "es": "hoy"
+                }
+              },
+              {
+                "id": "1",
+                "title": {
+                  "en": "tomorrow",
+                  "es": "mañana"
+                }
+              }
+            ]
+          },
+          {
+            "name": "percent",
+            "type": "number",
+            "min": 0,
+            "max": 100,
+            "step": 5,
+            "title": {
+              "en": "Percent",
+              "es": "Porcentaje"
+            }
           }
         ]
       }
@@ -616,6 +987,130 @@
             "filter": "driver_id=meteoveo"
           }
         ]
+      },
+      {
+        "id": "get_forecast",
+        "title": {
+          "en": "Get the forecast for a day",
+          "es": "Obtener la previsión de un día"
+        },
+        "titleFormatted": {
+          "en": "Get the forecast for [[day]]",
+          "es": "Obtener la previsión de [[day]]"
+        },
+        "hint": {
+          "en": "Gives the day's maximum, minimum, conditions, chance of rain and a ready sentence for a notification.",
+          "es": "Da la máxima, la mínima, el estado del cielo, la probabilidad de lluvia y una frase lista para una notificación."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=meteoveo"
+          },
+          {
+            "name": "day",
+            "type": "dropdown",
+            "title": {
+              "en": "Day",
+              "es": "Día"
+            },
+            "values": [
+              {
+                "id": "0",
+                "title": {
+                  "en": "today",
+                  "es": "hoy"
+                }
+              },
+              {
+                "id": "1",
+                "title": {
+                  "en": "tomorrow",
+                  "es": "mañana"
+                }
+              },
+              {
+                "id": "2",
+                "title": {
+                  "en": "the day after tomorrow",
+                  "es": "pasado mañana"
+                }
+              }
+            ]
+          }
+        ],
+        "tokens": [
+          {
+            "name": "max",
+            "type": "number",
+            "title": {
+              "en": "Maximum (°C)",
+              "es": "Máxima (°C)"
+            },
+            "example": 24
+          },
+          {
+            "name": "min",
+            "type": "number",
+            "title": {
+              "en": "Minimum (°C)",
+              "es": "Mínima (°C)"
+            },
+            "example": 13
+          },
+          {
+            "name": "condition",
+            "type": "string",
+            "title": {
+              "en": "Conditions",
+              "es": "Estado del cielo"
+            },
+            "example": {
+              "en": "Showers",
+              "es": "Chubascos"
+            }
+          },
+          {
+            "name": "rain_chance",
+            "type": "number",
+            "title": {
+              "en": "Chance of rain (%)",
+              "es": "Probabilidad de lluvia (%)"
+            },
+            "example": 60
+          },
+          {
+            "name": "rain_mm",
+            "type": "number",
+            "title": {
+              "en": "Rain (mm)",
+              "es": "Lluvia (mm)"
+            },
+            "example": 4.2
+          },
+          {
+            "name": "uv",
+            "type": "number",
+            "title": {
+              "en": "UV index",
+              "es": "Índice UV"
+            },
+            "example": 5
+          },
+          {
+            "name": "summary",
+            "type": "string",
+            "title": {
+              "en": "Summary",
+              "es": "Resumen"
+            },
+            "example": {
+              "en": "Tomorrow: Showers, 24°/13°, 60% chance of rain",
+              "es": "Mañana: Chubascos, 24°/13°, 60 % de lluvia"
+            }
+          }
+        ]
       }
     ]
   },
@@ -643,7 +1138,12 @@
         "measure_ultraviolet",
         "meteoveo_rain_soon",
         "meteoveo_rain_start",
-        "meteoveo_warning"
+        "meteoveo_warning",
+        "measure_temperature.max_today",
+        "measure_temperature.min_today",
+        "measure_temperature.max_tomorrow",
+        "measure_temperature.min_tomorrow",
+        "measure_ultraviolet.max_today"
       ],
       "capabilitiesOptions": {
         "measure_temperature": {
@@ -654,6 +1154,40 @@
         },
         "measure_gust_strength": {
           "decimals": 0
+        },
+        "measure_temperature.max_today": {
+          "title": {
+            "en": "Maximum today",
+            "es": "Máxima de hoy"
+          },
+          "decimals": 0
+        },
+        "measure_temperature.min_today": {
+          "title": {
+            "en": "Minimum today",
+            "es": "Mínima de hoy"
+          },
+          "decimals": 0
+        },
+        "measure_temperature.max_tomorrow": {
+          "title": {
+            "en": "Maximum tomorrow",
+            "es": "Máxima de mañana"
+          },
+          "decimals": 0
+        },
+        "measure_temperature.min_tomorrow": {
+          "title": {
+            "en": "Minimum tomorrow",
+            "es": "Mínima de mañana"
+          },
+          "decimals": 0
+        },
+        "measure_ultraviolet.max_today": {
+          "title": {
+            "en": "UV maximum today",
+            "es": "UV máximo de hoy"
+          }
         }
       },
       "images": {

@@ -21,7 +21,12 @@
     "measure_ultraviolet",
     "meteoveo_rain_soon",
     "meteoveo_rain_start",
-    "meteoveo_warning"
+    "meteoveo_warning",
+    "measure_temperature.max_today",
+    "measure_temperature.min_today",
+    "measure_temperature.max_tomorrow",
+    "measure_temperature.min_tomorrow",
+    "measure_ultraviolet.max_today"
   ],
   "capabilitiesOptions": {
     "measure_temperature": {
@@ -32,6 +37,40 @@
     },
     "measure_gust_strength": {
       "decimals": 0
+    },
+    "measure_temperature.max_today": {
+      "title": {
+        "en": "Maximum today",
+        "es": "Máxima de hoy"
+      },
+      "decimals": 0
+    },
+    "measure_temperature.min_today": {
+      "title": {
+        "en": "Minimum today",
+        "es": "Mínima de hoy"
+      },
+      "decimals": 0
+    },
+    "measure_temperature.max_tomorrow": {
+      "title": {
+        "en": "Maximum tomorrow",
+        "es": "Máxima de mañana"
+      },
+      "decimals": 0
+    },
+    "measure_temperature.min_tomorrow": {
+      "title": {
+        "en": "Minimum tomorrow",
+        "es": "Mínima de mañana"
+      },
+      "decimals": 0
+    },
+    "measure_ultraviolet.max_today": {
+      "title": {
+        "en": "UV maximum today",
+        "es": "UV máximo de hoy"
+      }
     }
   },
   "images": {
