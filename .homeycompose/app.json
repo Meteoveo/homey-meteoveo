@@ -11,8 +11,8 @@
     "es": "MeteoVeo"
   },
   "description": {
-    "en": "Know when it will rain at home in Spain, minute by minute",
-    "es": "Sabe cuándo va a llover en tu casa, minuto a minuto"
+    "en": "Rain at your home in Spain, minute by minute, from radar, nearby stations and AEMET",
+    "es": "Lluvia en tu casa minuto a minuto, con radar, estaciones cercanas y AEMET"
   },
   "category": [
     "climate"
@@ -28,13 +28,14 @@
       "rain",
       "forecast",
       "nowcast",
+      "radar",
       "spain",
       "aemet",
       "weather station",
       "warnings"
     ],
     "es": [
-      "tiempo",
+      "meteorología",
       "lluvia",
       "previsión",
       "radar",

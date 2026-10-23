@@ -45,8 +45,12 @@
     {
       "id": "rain_started",
       "title": {
-        "en": "It started raining",
-        "es": "Ha empezado a llover"
+        "en": "It starts raining",
+        "es": "Empieza a llover"
+      },
+      "hint": {
+        "en": "When rain reaches your home, from radar and nearby stations.",
+        "es": "Cuando la lluvia llega a tu casa, según el radar y las estaciones cercanas."
       },
       "tokens": [
         {
@@ -62,8 +66,8 @@
     {
       "id": "rain_stopped",
       "title": {
-        "en": "It stopped raining",
-        "es": "Ha dejado de llover"
+        "en": "It stops raining",
+        "es": "Deja de llover"
       },
       "hint": {
         "en": "After ten minutes without rain, so a short break in a shower does not count.",
@@ -102,8 +106,8 @@
           "name": "headline",
           "type": "string",
           "title": {
-            "en": "Text (AEMET)",
-            "es": "Texto (AEMET)"
+            "en": "AEMET text",
+            "es": "Texto de AEMET"
           },
           "example": "Acumulación de 40 mm en 12 horas"
         },
@@ -138,7 +142,7 @@
     {
       "id": "condition_changed",
       "title": {
-        "en": "The conditions changed",
+        "en": "The conditions change",
         "es": "Cambia el estado del cielo"
       },
       "tokens": [
@@ -181,7 +185,7 @@
     {
       "id": "warning_level_changed",
       "title": {
-        "en": "The warning level changed",
+        "en": "The warning level changes",
         "es": "Cambia el nivel de aviso"
       },
       "tokens": [
@@ -214,8 +218,8 @@
     {
       "id": "warning_cleared",
       "title": {
-        "en": "No more active warnings",
-        "es": "Ya no hay avisos activos"
+        "en": "All warnings are cleared",
+        "es": "Ya no queda ningún aviso activo"
       }
     }
   ],
@@ -332,12 +336,12 @@
     {
       "id": "rain_intensity_within",
       "title": {
-        "en": "It will !{{|not }}rain hard soon",
-        "es": "!{{Va|No va}} a llover con fuerza pronto"
+        "en": "Rain of at least an intensity is !{{|not }}expected",
+        "es": "!{{Se espera|No se espera}} lluvia de cierta intensidad"
       },
       "titleFormatted": {
-        "en": "It will !{{|not }}rain [[intensity]] or heavier within [[minutes]]",
-        "es": "!{{Va|No va}} a llover de forma [[intensity]] o más en [[minutes]]"
+        "en": "Rain at least [[intensity]] is !{{|not }}expected within [[minutes]]",
+        "es": "!{{Se espera|No se espera}} lluvia [[intensity]] o más fuerte en [[minutes]]"
       },
       "args": [
         {
@@ -407,8 +411,8 @@
     {
       "id": "warning_type_active",
       "title": {
-        "en": "A warning of a kind is !{{|not }}active",
-        "es": "!{{Hay|No hay}} un aviso de un tipo"
+        "en": "A warning for a phenomenon is !{{|not }}active",
+        "es": "!{{Hay|No hay}} un aviso por un fenómeno"
       },
       "titleFormatted": {
         "en": "A [[phenomenon]] warning of level [[level]] or higher is !{{|not }}active",
@@ -419,8 +423,8 @@
           "name": "phenomenon",
           "type": "dropdown",
           "title": {
-            "en": "Kind",
-            "es": "Tipo"
+            "en": "Phenomenon",
+            "es": "Fenómeno"
           },
           "values": [
             {
@@ -730,7 +734,7 @@
         "es": "Fuera !{{hace|no hace}} al menos [[margin]] °C menos que [[indoor]] °C"
       },
       "hint": {
-        "en": "Drop the temperature of an indoor sensor into the field: good for opening windows instead of the air conditioning.",
+        "en": "Put the temperature of an indoor sensor in the field: handy for opening the windows instead of running the air conditioning.",
         "es": "Pon en el campo la temperatura de un sensor de dentro: útil para abrir ventanas en lugar de encender el aire acondicionado."
       },
       "args": [
@@ -1002,8 +1006,8 @@
         "es": "Obtener la previsión de [[day]]"
       },
       "hint": {
-        "en": "Gives the day's maximum, minimum, conditions, chance of rain and a ready sentence for a notification.",
-        "es": "Da la máxima, la mínima, el estado del cielo, la probabilidad de lluvia y una frase lista para una notificación."
+        "en": "Gives the day's maximum, minimum, conditions and chance of rain, plus a ready-made sentence for a notification.",
+        "es": "Da la máxima, la mínima, el estado del cielo y la probabilidad de lluvia, más una frase lista para una notificación."
       },
       "args": [
         {

@@ -70,8 +70,8 @@
     },
     "measure_ultraviolet.max_today": {
       "title": {
-        "en": "UV maximum today",
-        "es": "UV máximo de hoy"
+        "en": "UV index maximum today",
+        "es": "Índice UV máximo de hoy"
       }
     },
     "measure_temperature.feels_like": {
@@ -130,8 +130,8 @@
             "es": "Avisos de AEMET en la línea de tiempo"
           },
           "hint": {
-            "en": "A notification in the Homey timeline when a warning is issued for your area. No Flow needed.",
-            "es": "Una notificación en la línea de tiempo de Homey cuando se activa un aviso en tu zona. Sin crear ningún Flow."
+            "en": "A notification in the Homey timeline when AEMET issues a warning for your area. No Flow needed.",
+            "es": "Una notificación en la línea de tiempo de Homey cuando AEMET activa un aviso en tu zona. Sin crear ningún Flow."
           },
           "values": [
             {
@@ -173,8 +173,8 @@
             "es": "Lluvia en camino, en la línea de tiempo"
           },
           "hint": {
-            "en": "A notification when the next-hour forecast first shows rain coming.",
-            "es": "Una notificación cuando la previsión de la próxima hora muestra lluvia en camino."
+            "en": "A notification when the next-hour forecast first shows rain on its way.",
+            "es": "Una notificación cuando la previsión de la próxima hora muestra por primera vez lluvia en camino."
           }
         }
       ]

@@ -2,10 +2,10 @@ MeteoVeo is a weather service for Spain built on measurements: radar, thousands 
 
 With this app your Homey knows:
 - whether rain is coming in the next hour, and when it starts and stops;
-- the current temperature, humidity, pressure, wind and UV at home;
+- the current temperature, humidity, pressure, wind and UV index at home, with today's and tomorrow's maximum and minimum;
 - active AEMET weather warnings for your area.
 
-Use it in Flows: close the awning before the rain, skip the garden watering, or get a notification when an orange warning is issued. The dashboard widget shows the next hour of rain at a glance.
+Use it in Flows: retract the awning before the rain, skip the garden watering, or get a notification with the radar image when an orange warning is issued. Two dashboard widgets come with it: the forecast in the look of the MeteoVeo app, with the next hour of rain, our own 3-hour forecast and 7 days, and a radar loop of the last two hours around your home.
 
 Setting up takes a minute: create a free MeteoVeo account (or sign in) while adding the device, confirm the code we e-mail you, and pick your location. No API keys to copy.
 
@@ -23,4 +23,4 @@ Ideas for your Flows:
 - Fresh air: in the evening, if it is at least 2 °C cooler outside than inside, open the windows instead of running the air conditioning.
 - Tropical nights: if tonight will be a tropical night, schedule the bedroom air conditioning.
 
-Orange and red AEMET warnings reach the Homey timeline without any Flow; change it in the device settings. Tip: put the device in an outdoor zone or switch on "Exclude from climate" in its advanced settings, so the outdoor temperature does not mix with your rooms.
+Orange and red AEMET warnings reach the Homey timeline without any Flow; change that in the device settings. Tip: put the device in an outdoor zone or switch on Exclude from climate in its advanced settings, so the outdoor temperature does not mix with your rooms.
