@@ -88,3 +88,32 @@ test('the state survives a JSON round trip (it is kept in the device store)', ()
   const { state } = run([[min(0), hour({ rainSoon: true, rainStartsAt: '2026-10-23T12:30:00Z' })]]);
   assert.deepEqual(JSON.parse(JSON.stringify(state)), state);
 });
+
+const { rainWithinMinutes } = require('../lib/rain');
+
+test('rain within N minutes counts from now, by each step\'s own time, not from leadMinutes', () => {
+  const nextHour = {
+    steps: [
+      { at: '2026-10-23T12:00:00Z', leadMinutes: 0, band: 'none' },
+      { at: '2026-10-23T12:10:00Z', leadMinutes: 10, band: 'none' },
+      { at: '2026-10-23T12:20:00Z', leadMinutes: 20, band: 'light' },
+    ],
+  };
+  // Fresh response: rain at +20 is not within 10 minutes, but is within 20.
+  assert.equal(rainWithinMinutes(nextHour, 10, Date.parse('2026-10-23T12:00:00Z')), false);
+  assert.equal(rainWithinMinutes(nextHour, 20, Date.parse('2026-10-23T12:00:00Z')), true);
+  // The same response kept after a 304, eight minutes later: the rain is now 12 minutes away.
+  assert.equal(rainWithinMinutes(nextHour, 10, Date.parse('2026-10-23T12:08:00Z')), false);
+  assert.equal(rainWithinMinutes(nextHour, 12, Date.parse('2026-10-23T12:08:00Z')), true);
+});
+
+test('a step that is already over does not count, a running one does', () => {
+  const nextHour = { steps: [{ at: '2026-10-23T12:00:00Z', leadMinutes: 0, band: 'moderate' }] };
+  assert.equal(rainWithinMinutes(nextHour, 10, Date.parse('2026-10-23T12:05:00Z')), true);
+  assert.equal(rainWithinMinutes(nextHour, 10, Date.parse('2026-10-23T12:11:00Z')), false);
+});
+
+test('without steps the answer is unknown (null), not false', () => {
+  assert.equal(rainWithinMinutes(null, 10, Date.now()), null);
+  assert.equal(rainWithinMinutes({ steps: [] }, 10, Date.now()), null);
+});

@@ -3,7 +3,7 @@
 const Homey = require('homey');
 const { InvalidKey, ServiceUnavailable } = require('../../lib/client');
 const { capabilityValues, localDate } = require('../../lib/convert');
-const { initialRainState, nextRainState } = require('../../lib/rain');
+const { initialRainState, nextRainState, rainWithinMinutes } = require('../../lib/rain');
 const { newWarnings, levelAtLeast } = require('../../lib/warnings');
 const { buildWuParams, freshReadings, DailyRain } = require('../../lib/wu');
 
@@ -175,9 +175,9 @@ class MeteoVeoDevice extends Homey.Device {
 
   async rainWithin(minutes) {
     if (!this._home) await this.refresh({ force: true });
-    const nextHour = this._home && this._home.nextHour;
-    if (!nextHour || !Array.isArray(nextHour.steps)) throw new Error(this.homey.__('errors.no_nowcast'));
-    return nextHour.steps.some((s) => s.leadMinutes <= minutes && s.band && s.band !== 'none');
+    const answer = rainWithinMinutes(this._home && this._home.nextHour, minutes, Date.now());
+    if (answer === null) throw new Error(this.homey.__('errors.no_nowcast'));
+    return answer;
   }
 
   async warningActive(level) {
