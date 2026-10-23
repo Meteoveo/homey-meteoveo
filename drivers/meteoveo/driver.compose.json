@@ -1,7 +1,7 @@
 {
   "name": {
-    "en": "Weather at home",
-    "es": "El tiempo en casa"
+    "en": "Forecast for your home",
+    "es": "Previsión para tu casa"
   },
   "class": "sensor",
   "platforms": [

@@ -1,8 +1,8 @@
 {
   "type": "enum",
   "title": {
-    "en": "Weather",
-    "es": "Tiempo"
+    "en": "Conditions",
+    "es": "Estado del cielo"
   },
   "getable": true,
   "setable": false,
