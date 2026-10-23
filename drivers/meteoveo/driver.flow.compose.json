@@ -31,6 +31,14 @@
             "en": "moderate",
             "es": "moderada"
           }
+        },
+        {
+          "name": "radar",
+          "type": "image",
+          "title": {
+            "en": "Radar image",
+            "es": "Imagen del radar"
+          }
         }
       ]
     },
@@ -39,7 +47,17 @@
       "title": {
         "en": "It started raining",
         "es": "Ha empezado a llover"
-      }
+      },
+      "tokens": [
+        {
+          "name": "radar",
+          "type": "image",
+          "title": {
+            "en": "Radar image",
+            "es": "Imagen del radar"
+          }
+        }
+      ]
     },
     {
       "id": "rain_stopped",
@@ -106,6 +124,14 @@
             "es": "Termina"
           },
           "example": "24/10 08:00"
+        },
+        {
+          "name": "radar",
+          "type": "image",
+          "title": {
+            "en": "Radar image",
+            "es": "Imagen del radar"
+          }
         }
       ]
     },

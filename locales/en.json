@@ -134,5 +134,8 @@
     "day_2": "The day after tomorrow",
     "sentence": "__day__: __condition__, __max__°/__min__°, __chance__% chance of rain",
     "unknown": "–"
+  },
+  "camera": {
+    "radar": "Radar"
   }
 }
