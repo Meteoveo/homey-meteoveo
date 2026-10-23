@@ -2,9 +2,10 @@
 
 const Homey = require('homey');
 const { InvalidKey, ServiceUnavailable } = require('../../lib/client');
-const { capabilityValues, localDate } = require('../../lib/convert');
-const { initialRainState, nextRainState, rainWithinMinutes } = require('../../lib/rain');
-const { newWarnings, levelAtLeast } = require('../../lib/warnings');
+const { ICON_KEYS, capabilityValues, localDate } = require('../../lib/convert');
+const { initialRainState, nextRainState, rainWithinMinutes, rainIntensityWithin } = require('../../lib/rain');
+const { newWarnings, levelAtLeast, levelTransition, phenomenonActive } = require('../../lib/warnings');
+const { dailyCapabilityValues, dayForecast, precipChance } = require('../../lib/forecast');
 const { buildWuParams, freshReadings, DailyRain } = require('../../lib/wu');
 
 // The contract asks for at most one forecast request per five minutes.
@@ -118,7 +119,7 @@ class MeteoVeoDevice extends Homey.Device {
   }
 
   async _apply(home) {
-    const values = capabilityValues(home, { timezone: this._tz() });
+    const values = { ...capabilityValues(home, { timezone: this._tz() }), ...dailyCapabilityValues(home) };
     for (const [capability, value] of Object.entries(values)) {
       // null shows "no value" in Homey — the honest state when the service has
       // no reading; a zero would be a false measurement.
@@ -129,7 +130,13 @@ class MeteoVeoDevice extends Homey.Device {
     const rain = nextRainState(this.getStoreValue('rainState') || initialRainState(), home.nextHour, now);
     await this.setStoreValue('rainState', rain.state);
     for (const event of rain.events) {
-      await this._trigger(event.type, event.type === 'rain_expected' ? { minutes: event.minutes ?? 0 } : {});
+      if (event.type === 'rain_expected') {
+        await this._trigger(event.type, { minutes: event.minutes ?? 0, intensity: this.homey.__(`intensity.${event.band || 'none'}`) });
+      } else if (event.type === 'rain_ending') {
+        await this._trigger(event.type, { minutes: event.minutes ?? 0 });
+      } else {
+        await this._trigger(event.type, {});
+      }
     }
 
     const warnings = newWarnings(home.warnings, this.getStoreValue('seenWarnings') || [], now);
@@ -143,6 +150,15 @@ class MeteoVeoDevice extends Homey.Device {
         expires: this._when(w.expires),
       });
     }
+
+    // Highest-level transitions: changed / cleared. No history on the first poll.
+    const level = values.meteoveo_warning;
+    for (const event of levelTransition(this.getStoreValue('lastWarningLevel') ?? null, level)) {
+      await this._trigger(event.type, event.type === 'warning_level_changed'
+        ? { level: this.homey.__(`levels.${event.level}`), previous: this.homey.__(`levels.${event.previous}`) }
+        : {});
+    }
+    await this.setStoreValue('lastWarningLevel', level);
 
     const icon = values.meteoveo_condition;
     const lastIcon = this.getStoreValue('lastIcon');
@@ -182,6 +198,41 @@ class MeteoVeoDevice extends Homey.Device {
 
   async warningActive(level) {
     return levelAtLeast(this.getCapabilityValue('meteoveo_warning'), level);
+  }
+
+  async _ensureHome() {
+    if (!this._home) await this.refresh({ force: true });
+    return this._home;
+  }
+
+  async rainIntensityWithin(band, minutes) {
+    const home = await this._ensureHome();
+    const answer = rainIntensityWithin(home && home.nextHour, band, minutes, Date.now());
+    if (answer === null) throw new Error(this.homey.__('errors.no_nowcast'));
+    return answer;
+  }
+
+  async warningTypeActive(phenomenon, level) {
+    const home = await this._ensureHome();
+    return phenomenonActive(home && home.warnings, phenomenon, level);
+  }
+
+  async rainChanceAbove(day, percent) {
+    const chance = precipChance(await this._ensureHome(), day);
+    if (chance === null) throw new Error(this.homey.__('errors.no_forecast'));
+    return chance > percent;
+  }
+
+  async forecastTokens(day) {
+    const words = {
+      conditions: Object.fromEntries(ICON_KEYS.map((k) => [k, this.homey.__(`conditions.${k}`)])),
+      days: [0, 1, 2].map((i) => this.homey.__(`forecast.day_${i}`)),
+      sentence: this.homey.__('forecast.sentence'),
+      unknown: this.homey.__('forecast.unknown'),
+    };
+    const tokens = dayForecast(await this._ensureHome(), day, words);
+    if (!tokens) throw new Error(this.homey.__('errors.no_forecast'));
+    return tokens;
   }
 
   // --- Station ----------------------------------------------------------------

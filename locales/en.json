@@ -96,7 +96,8 @@
     "measurement_from_device": "This measurement already comes from a device chosen during pairing.",
     "station_key_rejected": "MeteoVeo rejected the station key. Remove this location and pair it again.",
     "account_deleted": "Your MeteoVeo account was deleted.",
-    "no_sources": "Choose at least one device, or pick the Flow option."
+    "no_sources": "Choose at least one device, or pick the Flow option.",
+    "no_forecast": "There is no forecast for that day yet."
   },
   "levels": {
     "none": "None",
@@ -119,5 +120,18 @@
   },
   "notifications": {
     "account_deleted": "Your MeteoVeo account was deleted. You can now remove the MeteoVeo devices."
+  },
+  "intensity": {
+    "none": "none",
+    "light": "light",
+    "moderate": "moderate",
+    "heavy": "heavy"
+  },
+  "forecast": {
+    "day_0": "Today",
+    "day_1": "Tomorrow",
+    "day_2": "The day after tomorrow",
+    "sentence": "__day__: __condition__, __max__°/__min__°, __chance__% chance of rain",
+    "unknown": "–"
   }
 }

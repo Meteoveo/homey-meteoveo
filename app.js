@@ -30,6 +30,13 @@ class MeteoVeoApp extends Homey.App {
         .registerRunListener(async ({ device, value }) => device.report(measurement, value, unit));
     }
     flow.getActionCard('refresh').registerRunListener(async ({ device }) => device.refresh({ force: true }));
+    flow.getConditionCard('rain_intensity_within')
+      .registerRunListener(async ({ device, intensity, minutes }) => device.rainIntensityWithin(intensity, Number(minutes)));
+    flow.getConditionCard('warning_type_active')
+      .registerRunListener(async ({ device, phenomenon, level }) => device.warningTypeActive(phenomenon, level));
+    flow.getConditionCard('rain_chance_above')
+      .registerRunListener(async ({ device, day, percent }) => device.rainChanceAbove(Number(day), Number(percent)));
+    flow.getActionCard('get_forecast').registerRunListener(async ({ device, day }) => device.forecastTokens(Number(day)));
 
     this.homey.dashboards.getWidget('weather')
       .registerSettingAutocompleteListener('device', async (query) => this._locations(query));
