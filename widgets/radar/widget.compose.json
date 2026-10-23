@@ -1,0 +1,69 @@
+{
+  "name": {
+    "en": "MeteoVeo Radar",
+    "es": "MeteoVeo Radar"
+  },
+  "height": 420,
+  "transparent": true,
+  "settings": [
+    {
+      "id": "device",
+      "type": "autocomplete",
+      "title": {
+        "en": "MeteoVeo location",
+        "es": "Ubicación de MeteoVeo"
+      },
+      "hint": {
+        "en": "Only needed if you have more than one MeteoVeo location. Left empty, the widget shows your first location.",
+        "es": "Solo hace falta si tienes más de una ubicación de MeteoVeo. Si lo dejas vacío, el widget muestra tu primera ubicación."
+      }
+    },
+    {
+      "id": "zoom",
+      "type": "dropdown",
+      "title": {
+        "en": "Area",
+        "es": "Zona"
+      },
+      "hint": {
+        "en": "Local is about 30 km across, District about 100 km, Region about 400 km.",
+        "es": "Local abarca unos 30 km, Comarca unos 100 km y Región unos 400 km."
+      },
+      "value": "comarca",
+      "values": [
+        { "id": "local", "title": { "en": "Local", "es": "Local" } },
+        { "id": "comarca", "title": { "en": "District", "es": "Comarca" } },
+        { "id": "region", "title": { "en": "Region", "es": "Región" } }
+      ]
+    },
+    {
+      "id": "language",
+      "type": "dropdown",
+      "title": {
+        "en": "Language",
+        "es": "Idioma"
+      },
+      "hint": {
+        "en": "Automatic follows your Homey's language (Spanish or English).",
+        "es": "Automático sigue el idioma de tu Homey (español o inglés)."
+      },
+      "value": "auto",
+      "values": [
+        { "id": "auto", "title": { "en": "Automatic", "es": "Automático" } },
+        { "id": "es", "title": { "en": "Español", "es": "Español" } },
+        { "id": "en", "title": { "en": "English", "es": "English" } },
+        { "id": "ca", "title": { "en": "Català", "es": "Català" } }
+      ]
+    }
+  ],
+  "api": {
+    "getRadar": {
+      "method": "GET",
+      "path": "/radar"
+    },
+    "getTiles": {
+      "method": "POST",
+      "path": "/tiles"
+    }
+  }
+}

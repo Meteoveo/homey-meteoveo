@@ -40,6 +40,8 @@ class MeteoVeoApp extends Homey.App {
 
     this.homey.dashboards.getWidget('weather')
       .registerSettingAutocompleteListener('device', async (query) => this._locations(query));
+    this.homey.dashboards.getWidget('radar')
+      .registerSettingAutocompleteListener('device', async (query) => this._locations(query));
   }
 
   /**
@@ -75,6 +77,53 @@ class MeteoVeoApp extends Homey.App {
     const device = devices.find((d) => d.getData().id === deviceId) || devices[0];
     const common = { language: this.homey.i18n.getLanguage(), layout: this.widgetLayout(instanceId) };
     return device ? { ...device.widgetData(), ...common } : { state: 'no_device', ...common };
+  }
+
+  _device(deviceId) {
+    const devices = this.homey.drivers.getDriver('meteoveo').getDevices();
+    return devices.find((d) => d.getData().id === deviceId) || devices[0] || null;
+  }
+
+  /** Data for the radar widget (widgets/radar/api.js): place + frame lists; an unknown id falls back to the first location. */
+  async radarData(deviceId) {
+    const device = this._device(deviceId);
+    const language = this.homey.i18n.getLanguage();
+    if (!device) return { state: 'no_device', language };
+    return { language, ...(await device.radarData(2)) };
+  }
+
+  /**
+   * Radar tiles for the widget, fetched here with the device's key: the API
+   * sends no CORS headers, so the widget's page cannot fetch them itself (and
+   * this keeps the key on the Homey). One call per frame. A tile the server
+   * has nothing for is `null` (404 = empty, ADR-0171: a dry area, not a
+   * failure); a tile that could not be fetched is `{ error: true }`, so the
+   * widget can tell "clear" from "unknown". Hard caps keep a request small.
+   */
+  async radarTiles(deviceId, tiles) {
+    const device = this._device(deviceId);
+    const key = device && device.radarKey();
+    const list = Array.isArray(tiles) ? tiles.slice(0, 16) : [];
+    if (!key) return list.map(() => null);
+    const out = new Array(list.length).fill(null);
+    let next = 0;
+    const worker = async () => {
+      while (next < list.length) {
+        const i = next++;
+        const t = list[i] || {};
+        const z = Number(t.z); const x = Number(t.x); const y = Number(t.y);
+        if (![z, x, y].every(Number.isInteger) || z < 0 || z > 12) continue;
+        try {
+          const tile = await this.client.radarTile(key, { z, x, y, at: typeof t.at === 'string' ? t.at : null });
+          if (tile) out[i] = { type: tile.type, data: tile.bytes.toString('base64') };
+        } catch (err) {
+          this.log('radar tile', z, x, y, err.message);
+          out[i] = { error: true };
+        }
+      }
+    };
+    await Promise.all([worker(), worker(), worker(), worker()]);
+    return out;
   }
 
   /** The saved card layout of a widget instance, always valid (lib/widget-layout.js). */
