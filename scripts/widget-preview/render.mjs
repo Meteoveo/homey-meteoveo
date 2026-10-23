@@ -34,10 +34,17 @@ const layoutName = opt('layout', 'default');
 const edit = args.includes('--edit');
 const previews = args.includes('--previews');
 
+const always = (ids) => ids.map((id) => ({ id, show: 'always' }));
 const LAYOUTS = {
   default: undefined,
-  reordered: { cards: [{ id: 'days', on: true }, { id: 'hero', on: true }, { id: 'nextHour', on: true }, { id: 'warning', on: true }, { id: 'metrics', on: false }, { id: 'hours', on: false }] },
-  minimal: { cards: [{ id: 'hero', on: true }, { id: 'nextHour', on: true }, { id: 'warning', on: false }, { id: 'metrics', on: false }, { id: 'hours', on: false }, { id: 'days', on: false }] },
+  reordered: { cards: [...always(['days', 'hero', 'nextHour']), { id: 'warning', show: 'auto' }, { id: 'metrics', show: 'never' }, { id: 'hours', show: 'never' }] },
+  minimal: { cards: [...always(['hero', 'nextHour']), { id: 'warning', show: 'never' }, { id: 'metrics', show: 'never' }, { id: 'hours', show: 'never' }, { id: 'days', show: 'never' }] },
+  // The next-hour card only when it rains (the owner's "csak ha lesz eső").
+  'nexthour-auto': { cards: [{ id: 'warning', show: 'auto' }, ...always(['hero', 'metrics']), { id: 'nextHour', show: 'auto' }, ...always(['hours', 'days'])] },
+  // The warning band always, with its quiet state on a calm day.
+  'warning-always': { cards: [...always(['warning', 'hero', 'metrics', 'nextHour', 'hours', 'days'])] },
+  // A layout saved before the three states: must migrate.
+  legacy: { cards: [{ id: 'days', on: true }, { id: 'hero', on: true }, { id: 'nextHour', on: false }, { id: 'warning', on: true }, { id: 'metrics', on: false }, { id: 'hours', on: true }] },
 };
 
 const mockCss = fs.readFileSync(path.join(here, 'homey-mock.css'), 'utf8');
@@ -122,13 +129,24 @@ async function dragCheck(browser, data) {
   await page.click('.rows .row:nth-child(4) .name');
   const order = await page.$$eval('.rows .row', (rows) => rows.map((r) => r.dataset.id));
   await page.click('.rows .row:nth-child(2) .switch');
+  // The next-hour card to "if rain", the warning band to "always".
+  await page.click('.rows .row[data-id="nextHour"] .seg button[data-show="auto"]');
+  await page.click('.rows .row[data-id="warning"] .seg button[data-show="always"]');
+  // Refused: with every other card off or auto, the last 'always' (hero) may not leave.
+  for (const id of ['hours', 'days']) await page.click(`.rows .row[data-id="${id}"] .switch`);
+  await page.click('.rows .row[data-id="warning"] .seg button[data-show="auto"]');
+  await page.click('.rows .row[data-id="hero"] .switch');
+  const refused = await page.$eval('.edit-msg', (m) => m.textContent);
+  const heroStill = await page.$eval('.rows .row[data-id="hero"] .switch', (b) => b.getAttribute('aria-checked'));
+  await page.click('.rows .row[data-id="warning"] .seg button[data-show="always"]');
+  for (const id of ['hours', 'days']) await page.click(`.rows .row[data-id="${id}"] .switch`);
   await page.click('.btn.primary');
   await page.waitForSelector('.edit-btn');
   const put = await page.evaluate(() => window.__mvPut);
   const haptics = await page.evaluate(() => window.__mvHaptics);
   const shown = await page.$$eval('.wrap > *', (nodes) => nodes.map((n) => n.className.split(' ')[0]));
   await page.close();
-  return { order, put, haptics, shown };
+  return { order, put, haptics, shown, refused, heroStill };
 }
 
 const browser = await chromium.launch();
