@@ -1,0 +1,57 @@
+{
+  "name": {
+    "en": "MeteoVeo",
+    "es": "El tiempo"
+  },
+  "height": 560,
+  "transparent": true,
+  "settings": [
+    {
+      "id": "device",
+      "type": "autocomplete",
+      "title": {
+        "en": "MeteoVeo location",
+        "es": "Ubicación de MeteoVeo"
+      },
+      "hint": {
+        "en": "Only needed if you have more than one MeteoVeo location. Left empty, the widget shows your first location.",
+        "es": "Solo hace falta si tienes más de una ubicación de MeteoVeo. Si lo dejas vacío, el widget muestra tu primera ubicación."
+      }
+    },
+    {
+      "id": "layout",
+      "type": "dropdown",
+      "title": {
+        "en": "Layout",
+        "es": "Diseño"
+      },
+      "hint": {
+        "en": "Full shows the next hour, the coming hours and 7 days. Compact shows only the current weather and the next hour.",
+        "es": "Completo muestra la próxima hora, las próximas horas y 7 días. Compacto muestra solo el tiempo actual y la próxima hora."
+      },
+      "value": "full",
+      "values": [
+        {
+          "id": "full",
+          "title": {
+            "en": "Full",
+            "es": "Completo"
+          }
+        },
+        {
+          "id": "compact",
+          "title": {
+            "en": "Compact",
+            "es": "Compacto"
+          }
+        }
+      ]
+    }
+  ],
+  "api": {
+    "getForecast": {
+      "method": "GET",
+      "path": "/forecast"
+    }
+  }
+}

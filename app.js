@@ -30,7 +30,7 @@ class MeteoVeoApp extends Homey.App {
     }
     flow.getActionCard('refresh').registerRunListener(async ({ device }) => device.refresh({ force: true }));
 
-    this.homey.dashboards.getWidget('next-hour')
+    this.homey.dashboards.getWidget('weather')
       .registerSettingAutocompleteListener('device', async (query) => this._locations(query));
   }
 
@@ -56,7 +56,7 @@ class MeteoVeoApp extends Homey.App {
       .filter((item) => item.name.toLowerCase().includes(q));
   }
 
-  /** Data for the dashboard widget (widgets/next-hour/api.js). */
+  /** Data for the dashboard widget (widgets/weather/api.js); an unknown id falls back to the first location. */
   widgetData(deviceId) {
     const devices = this.homey.drivers.getDriver('meteoveo').getDevices();
     const device = devices.find((d) => d.getData().id === deviceId) || devices[0];
