@@ -45,7 +45,8 @@
       "height": "Altura del sensor sobre el suelo (cm)",
       "height_hint": "Sirve para comparar tus medidas con las de las estaciones cercanas.",
       "flow_hint": "Después, crea un Flow como: Cuando cambie la temperatura de tu estación → MeteoVeo: Enviar temperatura.",
-      "none": "Ninguno"
+      "none": "Ninguno",
+      "found": "Hemos encontrado una estación meteorológica en tu Homey: __name__. Abajo están sus medidas seleccionadas; revísalas antes de terminar."
     }
   },
   "measurements": {

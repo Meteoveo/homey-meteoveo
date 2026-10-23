@@ -4,6 +4,7 @@ const Homey = require('homey');
 const { PairingSession, PairingError } = require('../../lib/pairing');
 const { RequestRejected, ServiceUnavailable } = require('../../lib/client');
 const { MEASUREMENTS } = require('../../lib/wu');
+const { detectStation } = require('../../lib/station-detect');
 
 const OWN_DRIVER_PREFIX = 'homey:app:com.meteoveo:';
 
@@ -50,7 +51,10 @@ class MeteoVeoDriver extends Homey.Driver {
     on('homey_location', async () => this._homeyLocation());
     on('search_places', (d) => pairing.searchPlaces(d));
     on('set_location', async (d) => pairing.setLocation(d));
-    on('station_candidates', async () => this._stationCandidates());
+    on('station_candidates', async () => {
+      const candidates = await this._stationCandidates();
+      return { candidates, detected: detectStation(candidates) };
+    });
     on('set_station', async (d) => pairing.setStation(d.station || null));
     on('finish', (d) => pairing.finish(d));
   }
@@ -120,6 +124,7 @@ class MeteoVeoDriver extends Homey.Driver {
         const zone = zones[d.zone];
         return [{
           deviceId: d.id,
+          driverId: d.driverId || d.driverUri || '',
           name: d.name,
           zone: zone ? zone.name : '',
           capability,
