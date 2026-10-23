@@ -1,3 +1,4 @@
+<div id="mv-verify">
 <header class="homey-header">
   <h1 class="homey-title" data-i18n="pair.verify.title"></h1>
   <p class="homey-subtitle" data-i18n="pair.verify.subtitle"></p>
@@ -11,34 +12,40 @@
   <p class="mv-hint" data-i18n="pair.verify.hint"></p>
   <button class="homey-button-primary-full" id="submit" data-i18n="pair.continue"></button>
 </form>
+</div>
 
 <style>.mv-hint { font-size: 13px; opacity: .7; margin: 6px 0 16px; }</style>
 
 <script type="text/javascript">
-  const t = (key) => Homey.__(key);
-  document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
-  // Six digits is the whole code (ADR-0830): send it without hunting for the button under the keyboard.
-  document.getElementById('code').addEventListener('input', (event) => {
-    if (/^\d{6}$/.test(event.target.value.trim())) document.querySelector('form').requestSubmit();
-  });
-  let busy = false;
-  document.querySelector('form').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    if (busy) return;
-    busy = true;
-    try { await submit(); } finally { busy = false; }
-  });
-  async function submit() {
-    Homey.showLoadingOverlay();
-    try {
-      await Homey.emit('verify', { code: document.getElementById('code').value });
-      Homey.showView('location');
-    } catch (err) {
-      const key = 'errors.' + (err && err.message);
-      const text = t(key);
-      Homey.alert(text && text !== key ? text : t('errors.unknown'), 'error');
-    } finally {
-      Homey.hideLoadingOverlay();
+  // Each view in its own scope, and every lookup inside its own root: the
+  // pairing dialog may keep earlier views in the same page.
+  (function () {
+    const root = document.getElementById('mv-verify');
+    const t = (key) => Homey.__(key);
+    root.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
+    // Six digits is the whole code (ADR-0830): send it without hunting for the button under the keyboard.
+    root.querySelector('#code').addEventListener('input', (event) => {
+      if (/^\d{6}$/.test(event.target.value.trim())) root.querySelector('form').requestSubmit();
+    });
+    let busy = false;
+    root.querySelector('form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (busy) return;
+      busy = true;
+      try { await submit(); } finally { busy = false; }
+    });
+    async function submit() {
+      Homey.showLoadingOverlay();
+      try {
+        await Homey.emit('verify', { code: root.querySelector('#code').value });
+        Homey.showView('location');
+      } catch (err) {
+        const key = 'errors.' + (err && err.message);
+        const text = t(key);
+        Homey.alert(text && text !== key ? text : t('errors.unknown'), 'error');
+      } finally {
+        Homey.hideLoadingOverlay();
+      }
     }
-  }
+  })();
 </script>

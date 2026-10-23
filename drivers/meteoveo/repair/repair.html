@@ -1,3 +1,4 @@
+<div id="mv-repair">
 <header class="homey-header">
   <h1 class="homey-title" data-i18n="repair.title"></h1>
 </header>
@@ -56,6 +57,7 @@
 
   <button class="homey-button-primary-full" id="submit"></button>
 </form>
+</div>
 
 <style>
   .mv-hint { font-size: 13px; opacity: .7; margin: 6px 0 16px; }
@@ -64,61 +66,66 @@
 </style>
 
 <script type="text/javascript">
-  const t = (key) => Homey.__(key);
-  document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
-  document.getElementById('what-is-deleted').addEventListener('click', (e) => {
-    e.preventDefault();
-    Homey.openURL('https://www.meteoveo.com/legal/eliminar-cuenta');
-  });
-  const what = () => document.querySelector('input[name="what"]:checked').value;
-  const button = document.getElementById('submit');
+  // Each view in its own scope, and every lookup inside its own root: the
+  // pairing dialog may keep earlier views in the same page.
+  (function () {
+    const root = document.getElementById('mv-repair');
+    const t = (key) => Homey.__(key);
+    root.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
+    root.querySelector('#what-is-deleted').addEventListener('click', (e) => {
+      e.preventDefault();
+      Homey.openURL('https://www.meteoveo.com/legal/eliminar-cuenta');
+    });
+    const what = () => root.querySelector('input[name="what"]:checked').value;
+    const button = root.querySelector('#submit');
 
-  function render() {
-    const w = what();
-    for (const s of ['login', 'location', 'delete']) document.getElementById('section-' + s).style.display = w === s ? '' : 'none';
-    document.getElementById('credentials').style.display = w === 'location' ? 'none' : '';
-    document.getElementById('confirm-group').style.display = w === 'delete' ? '' : 'none';
-    button.textContent = t(w === 'delete' ? 'repair.delete_button' : 'pair.continue');
-    button.classList.toggle('mv-danger', w === 'delete');
-  }
-  document.querySelectorAll('input[name="what"]').forEach((el) => el.addEventListener('change', render));
-  render();
-
-  Homey.emit('homey_location').then((here) => {
-    if (!here) return;
-    document.getElementById('lat').value = Number(here.lat).toFixed(2);
-    document.getElementById('lon').value = Number(here.lon).toFixed(2);
-  }).catch(() => {});
-
-  let busy = false;
-  document.querySelector('form').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    if (busy) return;
-    busy = true;
-    try { await submit(); } finally { busy = false; }
-  });
-  async function submit() {
-    const w = what();
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    if (w === 'delete') {
-      const sure = await Homey.confirm(t('repair.delete_last_chance'), 'warning');
-      if (!sure) return;
+    function render() {
+      const w = what();
+      for (const s of ['login', 'location', 'delete']) root.querySelector('#section-' + s).style.display = w === s ? '' : 'none';
+      root.querySelector('#credentials').style.display = w === 'location' ? 'none' : '';
+      root.querySelector('#confirm-group').style.display = w === 'delete' ? '' : 'none';
+      button.textContent = t(w === 'delete' ? 'repair.delete_button' : 'pair.continue');
+      button.classList.toggle('mv-danger', w === 'delete');
     }
-    Homey.showLoadingOverlay();
-    try {
-      if (w === 'login') await Homey.emit('login_again', { email, password });
-      if (w === 'location') {
-        await Homey.emit('set_location', { lat: document.getElementById('lat').value, lon: document.getElementById('lon').value });
+    root.querySelectorAll('input[name="what"]').forEach((el) => el.addEventListener('change', render));
+    render();
+
+    Homey.emit('homey_location').then((here) => {
+      if (!here) return;
+      root.querySelector('#lat').value = Number(here.lat).toFixed(2);
+      root.querySelector('#lon').value = Number(here.lon).toFixed(2);
+    }).catch(() => {});
+
+    let busy = false;
+    root.querySelector('form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (busy) return;
+      busy = true;
+      try { await submit(); } finally { busy = false; }
+    });
+    async function submit() {
+      const w = what();
+      const email = root.querySelector('#email').value;
+      const password = root.querySelector('#password').value;
+      if (w === 'delete') {
+        const sure = await Homey.confirm(t('repair.delete_last_chance'), 'warning');
+        if (!sure) return;
       }
-      if (w === 'delete') await Homey.emit('delete_account', { email, password, confirm: document.getElementById('confirm').value });
-      Homey.done();
-    } catch (err) {
-      const key = 'errors.' + (err && err.message);
-      const text = t(key);
-      Homey.alert(text && text !== key ? text : t('errors.unknown'), 'error');
-    } finally {
-      Homey.hideLoadingOverlay();
+      Homey.showLoadingOverlay();
+      try {
+        if (w === 'login') await Homey.emit('login_again', { email, password });
+        if (w === 'location') {
+          await Homey.emit('set_location', { lat: root.querySelector('#lat').value, lon: root.querySelector('#lon').value });
+        }
+        if (w === 'delete') await Homey.emit('delete_account', { email, password, confirm: root.querySelector('#confirm').value });
+        Homey.done();
+      } catch (err) {
+        const key = 'errors.' + (err && err.message);
+        const text = t(key);
+        Homey.alert(text && text !== key ? text : t('errors.unknown'), 'error');
+      } finally {
+        Homey.hideLoadingOverlay();
+      }
     }
-  }
+  })();
 </script>

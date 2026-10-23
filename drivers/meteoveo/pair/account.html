@@ -1,3 +1,4 @@
+<div id="mv-account">
 <header class="homey-header">
   <h1 class="homey-title" data-i18n="pair.account.title"></h1>
   <p class="homey-subtitle" data-i18n="pair.account.subtitle"></p>
@@ -45,6 +46,7 @@
   <p class="mv-hint" id="passwordless" data-i18n="pair.account.passwordless" style="display:none"></p>
   <button class="homey-button-primary-full" id="submit" data-i18n="pair.continue"></button>
 </form>
+</div>
 
 <style>
   .mv-hint { font-size: 13px; opacity: .7; margin: 6px 0 0; }
@@ -52,65 +54,70 @@
 </style>
 
 <script type="text/javascript">
-  const t = (key) => Homey.__(key);
-  document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
-  // The terms sentence carries two links, so it is built from parts, not innerHTML of a translation.
-  const termsText = document.getElementById('terms-text');
-  termsText.append(t('pair.account.terms_before'));
-  for (const [key, href, after] of [
-    ['pair.account.terms_link', 'https://www.meteoveo.com/legal/terminos', 'pair.account.terms_between'],
-    ['pair.account.privacy_link', 'https://www.meteoveo.com/legal/privacidad', 'pair.account.terms_after'],
-  ]) {
-    const a = document.createElement('a');
-    a.href = href; a.target = '_blank'; a.rel = 'noopener'; a.textContent = t(key);
-    a.addEventListener('click', (e) => { e.preventDefault(); Homey.openURL(href); });
-    termsText.append(a, t(after));
-  }
-
-  const mode = () => document.querySelector('input[name="mode"]:checked').value;
-  function render() {
-    const signup = mode() === 'signup';
-    document.getElementById('consents').style.display = signup ? '' : 'none';
-    document.getElementById('password-hint').style.display = signup ? '' : 'none';
-    document.getElementById('passwordless').style.display = signup ? 'none' : '';
-    document.getElementById('password').autocomplete = signup ? 'new-password' : 'current-password';
-  }
-  document.querySelectorAll('input[name="mode"]').forEach((el) => el.addEventListener('change', render));
-  render();
-
-  function explain(err) {
-    const key = 'errors.' + (err && err.message);
-    const text = t(key);
-    Homey.alert(text && text !== key ? text : t('errors.unknown'), 'error');
-  }
-
-  let busy = false;
-  document.querySelector('form').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    if (busy) return;
-    busy = true;
-    try { await submit(); } finally { busy = false; }
-  });
-  async function submit() {
-    const data = {
-      email: document.getElementById('email').value,
-      password: document.getElementById('password').value,
-    };
-    Homey.showLoadingOverlay();
-    try {
-      if (mode() === 'signup') {
-        data.acceptTerms = document.getElementById('terms').checked;
-        data.marketingConsent = document.getElementById('marketing').checked;
-        await Homey.emit('signup', data);
-        Homey.showView('verify');
-      } else {
-        await Homey.emit('login', data);
-        Homey.showView('location');
-      }
-    } catch (err) {
-      explain(err);
-    } finally {
-      Homey.hideLoadingOverlay();
+  // Each view in its own scope, and every lookup inside its own root: the
+  // pairing dialog may keep earlier views in the same page.
+  (function () {
+    const root = document.getElementById('mv-account');
+    const t = (key) => Homey.__(key);
+    root.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
+    // The terms sentence carries two links, so it is built from parts, not innerHTML of a translation.
+    const termsText = root.querySelector('#terms-text');
+    termsText.append(t('pair.account.terms_before'));
+    for (const [key, href, after] of [
+      ['pair.account.terms_link', 'https://www.meteoveo.com/legal/terminos', 'pair.account.terms_between'],
+      ['pair.account.privacy_link', 'https://www.meteoveo.com/legal/privacidad', 'pair.account.terms_after'],
+    ]) {
+      const a = document.createElement('a');
+      a.href = href; a.target = '_blank'; a.rel = 'noopener'; a.textContent = t(key);
+      a.addEventListener('click', (e) => { e.preventDefault(); Homey.openURL(href); });
+      termsText.append(a, t(after));
     }
-  }
+
+    const mode = () => root.querySelector('input[name="mode"]:checked').value;
+    function render() {
+      const signup = mode() === 'signup';
+      root.querySelector('#consents').style.display = signup ? '' : 'none';
+      root.querySelector('#password-hint').style.display = signup ? '' : 'none';
+      root.querySelector('#passwordless').style.display = signup ? 'none' : '';
+      root.querySelector('#password').autocomplete = signup ? 'new-password' : 'current-password';
+    }
+    root.querySelectorAll('input[name="mode"]').forEach((el) => el.addEventListener('change', render));
+    render();
+
+    function explain(err) {
+      const key = 'errors.' + (err && err.message);
+      const text = t(key);
+      Homey.alert(text && text !== key ? text : t('errors.unknown'), 'error');
+    }
+
+    let busy = false;
+    root.querySelector('form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (busy) return;
+      busy = true;
+      try { await submit(); } finally { busy = false; }
+    });
+    async function submit() {
+      const data = {
+        email: root.querySelector('#email').value,
+        password: root.querySelector('#password').value,
+      };
+      Homey.showLoadingOverlay();
+      try {
+        if (mode() === 'signup') {
+          data.acceptTerms = root.querySelector('#terms').checked;
+          data.marketingConsent = root.querySelector('#marketing').checked;
+          await Homey.emit('signup', data);
+          Homey.showView('verify');
+        } else {
+          await Homey.emit('login', data);
+          Homey.showView('location');
+        }
+      } catch (err) {
+        explain(err);
+      } finally {
+        Homey.hideLoadingOverlay();
+      }
+    }
+  })();
 </script>
