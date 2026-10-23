@@ -31,13 +31,16 @@
     .wrap > * { min-width: 0; }
 
     /* Warning band: solid, never glass (the app: readability beats decoration) */
-    .warn { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 14px; font-size: 14px; font-weight: 600; }
+    .warn { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; padding: 10px 14px; border-radius: 14px; font-size: 14px; font-weight: 600; }
     .warn .ico { flex: none; width: 18px; height: 18px; }
-    .warn .what { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .warn .when { flex: none; font-weight: 500; opacity: .95; }
+    .warn .what { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* The time wraps under the phenomenon when both do not fit: the fact stays whole, the time right-aligned. */
+    .warn .when { flex: 0 0 auto; margin-left: auto; font-weight: 500; opacity: .95; white-space: nowrap; }
     .warn.yellow { background: #f2ce1b; color: #3a2c00; } .warn.yellow .ico { fill: #3a2c00; }
     .warn.orange { background: #e07b17; color: #fff; } .warn.orange .ico { fill: #fff; }
     .warn.red { background: #c92a2a; color: #fff; } .warn.red .ico { fill: #fff; }
+    .warn.none { background: var(--pill); border: 1px solid var(--pill); color: var(--on-sky-2); font-weight: 500; padding: 8px 14px; font-size: 13px; }
+    .warn.none .ico { fill: var(--on-sky-3); width: 16px; height: 16px; }
 
     /* Hero */
     .hero { display: grid; gap: 10px; }
@@ -126,6 +129,10 @@
     .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
     .switch[aria-checked="true"] { background: var(--mv-cobalt); }
     .switch[aria-checked="true"]::after { transform: translateX(16px); }
+    .row.cond { flex-wrap: wrap; }
+    .seg { flex: 0 0 calc(100% - 40px); box-sizing: border-box; display: flex; gap: 2px; padding: 2px; border-radius: 10px; background: rgba(255,255,255,.10); margin: 2px 0 0 40px; }
+    .seg button { flex: 1; min-width: 0; padding: 6px 4px; border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--on-sky-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .seg button[aria-pressed="true"] { background: rgba(255,255,255,.88); color: var(--mv-ink); }
     .edit-msg { font-size: 12.5px; color: #ffd166; min-height: 16px; margin-top: 8px; }
     .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
     .btn { padding: 10px 18px; border-radius: 999px; font-size: 14px; font-weight: 600; }
@@ -153,7 +160,11 @@
       const deviceId = settings.device && settings.device.id ? settings.device.id : '';
       const instanceId = typeof Homey.getWidgetInstanceId === 'function' ? (Homey.getWidgetInstanceId() || '') : '';
       const STEP_MS = 10 * 60000;
-      const CARD_IDS = ['warning', 'hero', 'metrics', 'nextHour', 'hours', 'days'];
+      // Mirrors lib/widget-layout.js: order, which cards are conditional ('auto' allowed), defaults.
+      const CARDS = { warning: { conditional: true, default: 'auto' }, hero: { conditional: false, default: 'always' }, metrics: { conditional: false, default: 'always' },
+        nextHour: { conditional: true, default: 'always' }, hours: { conditional: false, default: 'always' }, days: { conditional: false, default: 'always' } };
+      const CARD_IDS = Object.keys(CARDS);
+      const SHOW_VALUES = ['always', 'auto', 'never'];
 
       // The language: the setting, or "automatic" = the Homey language the app
       // sent (Spanish stays Spanish, everything else is English).
@@ -260,6 +271,13 @@
         if (w.onset && Date.parse(w.onset) > nowMs) when = timeWords(w.onset, d, 'warn_from', true);
         else if (w.expires) when = timeWords(w.expires, d, 'warn_until', false);
         if (when) band.append(el('span', 'when', when));
+        return band;
+      }
+
+      /** The 'always' warning card on a quiet day: says so, in the pill's voice, never in a colour. */
+      function quietWarningBand() {
+        const band = html('div', 'warn none', '<svg class="ico" viewBox="0 0 24 24"><path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2zm6-6V11c0-3.1-1.6-5.6-4.5-6.3V4a1.5 1.5 0 0 0-3 0v.7C7.6 5.4 6 7.9 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>');
+        band.append(el('span', 'what', t('no_warnings')));
         return band;
       }
 
@@ -410,23 +428,49 @@
         return card;
       }
 
-      // ---- Layout (order + on/off), always a full, valid list -------------
+      // ---- Layout (order + always/auto/never), always a full, valid list ----
 
+      function showOf(id, c) {
+        let show = c.show;
+        if (show === undefined && typeof c.on === 'boolean') show = c.on ? CARDS[id].default : 'never'; // pre-3-state layouts
+        if (!SHOW_VALUES.includes(show)) show = CARDS[id].default;
+        if (show === 'auto' && !CARDS[id].conditional) show = 'always';
+        return show;
+      }
       function normalizeLayout(input) {
         const raw = input && Array.isArray(input.cards) ? input.cards : [];
         const seen = new Set(); const cards = [];
         for (const c of raw.slice(0, 64)) {
-          if (!c || typeof c.id !== 'string' || !CARD_IDS.includes(c.id) || seen.has(c.id)) continue;
-          seen.add(c.id); cards.push({ id: c.id, on: c.on !== false });
+          if (!c || typeof c.id !== 'string' || !CARDS[c.id] || seen.has(c.id)) continue;
+          seen.add(c.id); cards.push({ id: c.id, show: showOf(c.id, c) });
         }
-        for (const id of CARD_IDS) if (!seen.has(id)) cards.push({ id, on: true });
-        if (!cards.some((c) => c.on)) cards.find((c) => c.id === 'hero').on = true;
+        for (const id of CARD_IDS) if (!seen.has(id)) cards.push({ id, show: CARDS[id].default });
+        if (!cards.some((c) => c.show === 'always')) cards.find((c) => c.id === 'hero').show = 'always';
         return { cards };
       }
 
-      function buildCard(id, d, width) {
+      /** Rain now or within the next 60 minutes, by the steps' own times (the 'auto' test of the next-hour card). */
+      function rainWithinHour(d) {
+        const n = d.nextHour;
+        if (!n || minutesAgo(n.issuedAt) > 60) return false;
+        if (n.rainNow) return true;
+        const nowMs = Date.now();
+        return (n.steps || []).some((s) => {
+          const at = Date.parse(s.at);
+          return s.band && s.band !== 'none' && at + STEP_MS > nowMs && at <= nowMs + 60 * 60000;
+        });
+      }
+
+      /** Does the card have something to say right now? Only asked for cards set to 'auto'. */
+      function autoShows(id, d) {
+        if (id === 'nextHour') return rainWithinHour(d);
+        if (id === 'warning') return (d.warnings || []).some((w) => ['yellow', 'orange', 'red'].includes(w.level));
+        return true;
+      }
+
+      function buildCard(id, d, width, show) {
         switch (id) {
-          case 'warning': return warningBand(d);
+          case 'warning': return warningBand(d) || (show === 'always' ? quietWarningBand() : null);
           case 'hero': return heroCard(d);
           case 'metrics': return metricsCard(d);
           case 'nextHour': return nextHourCard(d);
@@ -474,8 +518,9 @@
           wrap.append(editView(d));
         } else {
           for (const c of normalizeLayout(d.layout).cards) {
-            if (!c.on) continue;
-            const node = buildCard(c.id, d, width);
+            if (c.show === 'never') continue;
+            if (c.show === 'auto' && !autoShows(c.id, d)) continue;
+            const node = buildCard(c.id, d, width, c.show);
             if (node) wrap.append(node);
           }
           wrap.append(footer(d));
@@ -498,7 +543,8 @@
         function redraw() {
           rows.textContent = '';
           editing.cards.forEach((c, i) => {
-            const row = el('div', 'row' + (c.on ? '' : ' off'));
+            const cond = CARDS[c.id].conditional;
+            const row = el('div', 'row' + (c.show === 'never' ? ' off' : '') + (cond ? ' cond' : ''));
             row.dataset.id = c.id;
             const handle = html('button', 'handle', GRIP);
             handle.type = 'button'; handle.setAttribute('aria-label', t('drag'));
@@ -509,10 +555,23 @@
             up.addEventListener('click', () => move(i, i - 1));
             down.addEventListener('click', () => move(i, i + 1));
             arrows.append(up, down);
-            const sw = el('button', 'switch'); sw.type = 'button'; sw.setAttribute('role', 'switch'); sw.setAttribute('aria-checked', String(c.on));
-            sw.setAttribute('aria-label', t('card.' + c.id));
-            sw.addEventListener('click', () => toggle(i));
-            row.append(arrows, sw);
+            row.append(arrows);
+            if (cond) {
+              // Three states, in the app's segment-pill style: always / when there is something / never.
+              const seg = el('div', 'seg'); seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', t('card.' + c.id));
+              for (const show of SHOW_VALUES) {
+                const b = el('button', '', show === 'auto' ? t('show.' + c.id + '.auto') : t('show.' + show));
+                b.type = 'button'; b.dataset.show = show; b.setAttribute('aria-pressed', String(c.show === show));
+                b.addEventListener('click', (ev) => { ev.stopPropagation(); setShow(i, show); });
+                seg.append(b);
+              }
+              row.append(seg);
+            } else {
+              const sw = el('button', 'switch'); sw.type = 'button'; sw.setAttribute('role', 'switch'); sw.setAttribute('aria-checked', String(c.show !== 'never'));
+              sw.setAttribute('aria-label', t('card.' + c.id));
+              sw.addEventListener('click', () => setShow(i, c.show === 'never' ? 'always' : 'never'));
+              row.append(sw);
+            }
             attachDrag(handle, row);
             rows.append(row);
           });
@@ -527,13 +586,15 @@
           redraw(); fit();
         }
 
-        function toggle(i) {
+        function setShow(i, show) {
           const c = editing.cards[i];
-          if (c.on && editing.cards.filter((x) => x.on).length === 1) { msg.textContent = t('at_least_one'); return; }
-          c.on = !c.on;
+          if (c.show === show) return;
+          // One card must be 'always', or a dry day without warnings would render an empty widget.
+          if (c.show === 'always' && !editing.cards.some((x, j) => j !== i && x.show === 'always')) { msg.textContent = t('at_least_one'); return; }
+          c.show = show;
           haptic();
           msg.textContent = '';
-          redraw();
+          redraw(); fit();
         }
 
         // Tap to pick up, tap to place. Dragging does not survive the Homey app:
@@ -552,7 +613,7 @@
           });
           row.addEventListener('click', (ev) => {
             if (picked === null || busy) return;
-            if (ev.target.closest('.switch, .arrow')) return;
+            if (ev.target.closest('.switch, .arrow, .seg')) return;
             const to = index();
             const from = picked;
             picked = null;
