@@ -19,30 +19,44 @@
       }
     },
     {
-      "id": "layout",
+      "id": "language",
       "type": "dropdown",
       "title": {
-        "en": "Layout",
-        "es": "Diseño"
+        "en": "Language",
+        "es": "Idioma"
       },
       "hint": {
-        "en": "Full shows the next hour, the coming hours and 7 days. Compact shows only the current weather and the next hour.",
-        "es": "Completo muestra la próxima hora, las próximas horas y 7 días. Compacto muestra solo el tiempo actual y la próxima hora."
+        "en": "Automatic follows your Homey's language (Spanish or English). The cards and their order are set in the widget itself, with the pencil.",
+        "es": "Automático sigue el idioma de tu Homey (español o inglés). Las tarjetas y su orden se eligen en el propio widget, con el lápiz."
       },
-      "value": "full",
+      "value": "auto",
       "values": [
         {
-          "id": "full",
+          "id": "auto",
           "title": {
-            "en": "Full",
-            "es": "Completo"
+            "en": "Automatic",
+            "es": "Automático"
           }
         },
         {
-          "id": "compact",
+          "id": "es",
           "title": {
-            "en": "Compact",
-            "es": "Compacto"
+            "en": "Español",
+            "es": "Español"
+          }
+        },
+        {
+          "id": "en",
+          "title": {
+            "en": "English",
+            "es": "English"
+          }
+        },
+        {
+          "id": "ca",
+          "title": {
+            "en": "Català",
+            "es": "Català"
           }
         }
       ]
@@ -52,6 +66,10 @@
     "getForecast": {
       "method": "GET",
       "path": "/forecast"
+    },
+    "putLayout": {
+      "method": "PUT",
+      "path": "/layout"
     }
   }
 }

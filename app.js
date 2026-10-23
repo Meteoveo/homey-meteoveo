@@ -2,6 +2,7 @@
 
 const Homey = require('homey');
 const { MeteoVeoClient } = require('./lib/client');
+const { normalizeLayout, layoutKey } = require('./lib/widget-layout');
 
 const REPORTS = {
   report_temperature: ['temperature', '°C'],
@@ -56,11 +57,31 @@ class MeteoVeoApp extends Homey.App {
       .filter((item) => item.name.toLowerCase().includes(q));
   }
 
-  /** Data for the dashboard widget (widgets/weather/api.js); an unknown id falls back to the first location. */
-  widgetData(deviceId) {
+  /**
+   * Data for the dashboard widget (widgets/weather/api.js): the device's
+   * forecast (an unknown id falls back to the first location), the Homey
+   * language for the widget's "automatic" setting, and the card layout saved
+   * for this widget instance.
+   */
+  widgetData(deviceId, instanceId) {
     const devices = this.homey.drivers.getDriver('meteoveo').getDevices();
     const device = devices.find((d) => d.getData().id === deviceId) || devices[0];
-    return device ? device.widgetData() : { state: 'no_device' };
+    const common = { language: this.homey.i18n.getLanguage(), layout: this.widgetLayout(instanceId) };
+    return device ? { ...device.widgetData(), ...common } : { state: 'no_device', ...common };
+  }
+
+  /** The saved card layout of a widget instance, always valid (lib/widget-layout.js). */
+  widgetLayout(instanceId) {
+    const key = layoutKey(instanceId);
+    return normalizeLayout(key ? this.homey.settings.get(key) : null);
+  }
+
+  /** Stores the layout from the widget's edit mode and answers with what was kept. */
+  saveWidgetLayout(instanceId, cards) {
+    const layout = normalizeLayout({ cards });
+    const key = layoutKey(instanceId);
+    if (key) this.homey.settings.set(key, layout);
+    return layout;
   }
 }
 
