@@ -257,24 +257,27 @@ class MeteoVeoDevice extends Homey.Device {
    * may switch it back.
    */
   async _excludeFromClimate() {
-    if (this.getStoreValue('climateExcludeDone')) return;
+    if (this.getStoreValue('climateExcludeVerified')) return;
+    // A system setting: the device's own setSettings() ignores it silently
+    // (seen on the owner's Pro, 2026-10-23), so it goes through the Web API and
+    // counts as done only when it reads back true.
     try {
-      await this.setSettings({ climate_exclude: true });
-    } catch (direct) {
-      try {
-        const api = await this.homey.app.api();
-        const devices = Object.values(await api.devices.getDevices());
-        const me = devices.find((d) => String(d.driverId || '').startsWith('homey:app:com.meteoveo:')
-          && d.data && d.data.id === this.getData().id);
-        if (!me) throw new Error('device not found in the Web API');
+      const api = await this.homey.app.api();
+      const find = async () => Object.values(await api.devices.getDevices()).find((d) => String(d.driverId || '')
+        .startsWith('homey:app:com.meteoveo:') && d.data && d.data.id === this.getData().id);
+      const me = await find();
+      if (!me) throw new Error('device not found in the Web API');
+      if (!(me.settings && me.settings.climate_exclude === true)) {
         await api.devices.setDeviceSettings({ id: me.id, settings: { climate_exclude: true } });
-      } catch (viaApi) {
-        this.error('climate exclusion failed:', direct && direct.message, '/', viaApi && viaApi.message);
-        return;
       }
+      const check = await find();
+      if (!(check && check.settings && check.settings.climate_exclude === true)) throw new Error('did not stick');
+    } catch (err) {
+      this.error('climate exclusion failed:', err && err.message);
+      return;
     }
-    this.log('climate exclusion set');
-    await this.setStoreValue('climateExcludeDone', true);
+    this.log('climate exclusion set and verified');
+    await this.setStoreValue('climateExcludeVerified', true);
   }
 
   _trigger(cardId, tokens) {
