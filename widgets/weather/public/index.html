@@ -236,8 +236,9 @@
 
         const metrics = [];
         if (c.humidityPct !== null && c.humidityPct !== undefined) metrics.push([t('widget.humidity'), Math.round(c.humidityPct) + ' %']);
-        if (c.windMs !== null && c.windMs !== undefined) metrics.push([t('widget.wind'), fmtNum(c.windMs, 1) + ' m/s']);
-        if (c.gustMs !== null && c.gustMs !== undefined) metrics.push([t('widget.gust'), fmtNum(c.gustMs, 1) + ' m/s']);
+        // km/h, as in the app and at AEMET (the contract carries m/s).
+        if (c.windMs !== null && c.windMs !== undefined) metrics.push([t('widget.wind'), fmtNum(Math.round(c.windMs * 3.6), 0) + ' km/h']);
+        if (c.gustMs !== null && c.gustMs !== undefined) metrics.push([t('widget.gust'), fmtNum(Math.round(c.gustMs * 3.6), 0) + ' km/h']);
         if (c.pressureHpa !== null && c.pressureHpa !== undefined) metrics.push([t('widget.pressure'), Math.round(c.pressureHpa) + ' hPa']);
         if (c.precipMm !== null && c.precipMm !== undefined) metrics.push([t('widget.rain'), fmtNum(c.precipMm, 1) + ' mm']);
         if (metrics.length) {
