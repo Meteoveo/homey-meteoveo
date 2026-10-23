@@ -114,8 +114,8 @@
     .row.off .name { color: var(--on-sky-3); }
     .row.dragging { position: relative; z-index: 2; background: rgba(255,255,255,.28); box-shadow: 0 10px 26px -10px rgba(0,0,0,.6); transform: scale(1.02); }
     .rows.has-drag .row:not(.dragging) { transition: transform .12s ease; }
-    .handle { flex: none; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; color: var(--on-sky-2); touch-action: none; cursor: grab; border-radius: 10px; }
-    .handle:active { cursor: grabbing; }
+    .handle { flex: none; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; color: var(--on-sky-2); cursor: pointer; border-radius: 10px; background: none; border: 0; }
+    .row.drop-target { outline: 1px dashed rgba(255,255,255,.45); outline-offset: -1px; cursor: pointer; }
     .handle svg { width: 16px; height: 16px; fill: currentColor; }
     .row .name { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .arrows { flex: none; display: flex; gap: 2px; }
@@ -536,57 +536,34 @@
           redraw();
         }
 
-        // Drag with pointer events (touch, mouse, pen): the row follows the
-        // pointer, the others step aside as its centre crosses theirs.
+        // Tap to pick up, tap to place. Dragging does not survive the Homey app:
+        // its dashboard takes vertical swipes for scrolling and cancels the
+        // gesture inside the widget (seen on the owner's phone, 2026-10-23).
+        let picked = null;
         function attachDrag(handle, row) {
-          handle.addEventListener('pointerdown', (ev) => {
+          const index = () => [...rows.children].indexOf(row);
+          handle.addEventListener('click', (ev) => {
+            ev.stopPropagation();
             if (busy) return;
-            ev.preventDefault();
-            handle.setPointerCapture(ev.pointerId);
-            const startY = ev.clientY;
-            let fromIndex = [...rows.children].indexOf(row);
-            let dragged = false;
-            row.classList.add('dragging'); rows.classList.add('has-drag');
-            // After a DOM move the row's resting place changes; `offset` keeps it under the finger.
-            let offset = 0;
-            const onMove = (e) => {
-              const dy = e.clientY - startY;
-              if (Math.abs(dy) > 3) dragged = true;
-              row.style.transform = `translateY(${dy + offset}px) scale(1.02)`;
-              const centre = row.getBoundingClientRect().top + row.offsetHeight / 2;
-              const siblings = [...rows.children].filter((r) => r !== row);
-              let target = siblings.length;
-              for (let i = 0; i < siblings.length; i++) {
-                const r = siblings[i].getBoundingClientRect();
-                if (centre < r.top + r.height / 2) { target = i; break; }
-              }
-              const current = [...rows.children].indexOf(row);
-              if (target !== current) {
-                const before = row.getBoundingClientRect().top;
-                rows.insertBefore(row, siblings[target] || null);
-                offset += before - row.getBoundingClientRect().top;
-                row.style.transform = `translateY(${dy + offset}px) scale(1.02)`;
-              }
-            };
-            const onUp = () => {
-              handle.removeEventListener('pointermove', onMove);
-              handle.removeEventListener('pointerup', onUp);
-              handle.removeEventListener('pointercancel', onUp);
-              row.classList.remove('dragging'); rows.classList.remove('has-drag');
-              row.style.transform = '';
-              const toIndex = [...rows.children].indexOf(row);
-              if (toIndex !== fromIndex) {
-                const [item] = editing.cards.splice(fromIndex, 1);
-                editing.cards.splice(toIndex, 0, item);
-                haptic();
-              } else if (dragged) {
-                haptic();
-              }
-              redraw();
-            };
-            handle.addEventListener('pointermove', onMove);
-            handle.addEventListener('pointerup', onUp);
-            handle.addEventListener('pointercancel', onUp);
+            picked = picked === index() ? null : index();
+            haptic();
+            msg.textContent = picked === null ? '' : t('pick_hint');
+            markPicked();
+          });
+          row.addEventListener('click', (ev) => {
+            if (picked === null || busy) return;
+            if (ev.target.closest('.switch, .arrow')) return;
+            const to = index();
+            const from = picked;
+            picked = null;
+            if (to === from) { msg.textContent = ''; markPicked(); return; }
+            move(from, to);
+          });
+        }
+        function markPicked() {
+          [...rows.children].forEach((r, i) => {
+            r.classList.toggle('dragging', i === picked);
+            r.classList.toggle('drop-target', picked !== null && i !== picked);
           });
         }
 
