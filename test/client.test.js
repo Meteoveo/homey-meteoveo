@@ -141,3 +141,37 @@ test('settlement search uses the account token and asks for a short list', async
   assert.equal(fetch.calls[0].url, `${API_BASE}/v1/settlements/search?q=almi&limit=8`);
   assert.equal(fetch.calls[0].init.headers.Authorization, 'Bearer jwt');
 });
+
+test('radar frames go with the key, the hours, and come back as clean lists', async () => {
+  const fetch = fakeFetch([{ status: 200, body: { layer: 'radar', frames: ['2026-10-23T15:30:00.000Z', 7, '2026-10-23T15:40:00.000Z'], forecast: ['2026-10-23T15:50:00.000Z'], forecastBaseAt: '2026-10-23T15:40:00.000Z' } }]);
+  const out = await client(fetch).radarFrames('mvik_key', 2);
+  assert.equal(fetch.calls[0].url, `${API_BASE}/v1/overlays/radar/frames?hours=2`);
+  assert.equal(fetch.calls[0].init.headers.Authorization, 'Bearer mvik_key');
+  assert.deepEqual(out, { layer: 'radar', frames: ['2026-10-23T15:30:00.000Z', '2026-10-23T15:40:00.000Z'], forecast: ['2026-10-23T15:50:00.000Z'], forecastBaseAt: '2026-10-23T15:40:00.000Z' });
+});
+
+test('radar frames: more than the free 3 hours is a rejection the UI can name, a bad key is InvalidKey, junk is an outage', async () => {
+  await assert.rejects(client(fakeFetch([{ status: 403, body: { error: 'plus_required' } }])).radarFrames('k', 6), (e) => e instanceof RequestRejected && e.code === 'plus_required');
+  await assert.rejects(client(fakeFetch([{ status: 401 }])).radarFrames('k'), InvalidKey);
+  await assert.rejects(client(fakeFetch([{ status: 200, body: { nope: true } }])).radarFrames('k'), ServiceUnavailable);
+});
+
+test('a radar tile comes back as bytes with its type; 404 is null, 401 is InvalidKey', async () => {
+  const png = Uint8Array.from([0x89, 0x50, 0x4e, 0x47]);
+  const calls = [];
+  const fetch = async (url, init) => {
+    calls.push({ url: String(url), init });
+    if (String(url).includes('/9/')) return { status: 404, ok: false, headers: { get: () => null }, text: async () => '{"error":"no tile"}' };
+    if (String(url).includes('/7/')) return { status: 401, ok: false, headers: { get: () => null }, text: async () => '' };
+    return { status: 200, ok: true, headers: { get: (n) => (n === 'content-type' ? 'image/png' : null) }, arrayBuffer: async () => png.buffer };
+  };
+  const c = new MeteoVeoClient({ fetch, version: '0.1.0' });
+  const tile = await c.radarTile('mvik_key', { z: 8, x: 127, y: 97, at: '2026-10-23T15:40:00.000Z' });
+  assert.equal(calls[0].url, `${API_BASE}/v1/overlays/radar/8/127/97.png?at=2026-10-23T15%3A40%3A00.000Z`);
+  assert.equal(calls[0].init.headers.Authorization, 'Bearer mvik_key');
+  assert.equal(tile.type, 'image/png');
+  assert.deepEqual([...tile.bytes], [0x89, 0x50, 0x4e, 0x47]);
+  assert.equal(await c.radarTile('mvik_key', { z: 9, x: 1, y: 1, at: null }), null);
+  assert.equal(calls[1].url, `${API_BASE}/v1/overlays/radar/9/1/1.png`);
+  await assert.rejects(c.radarTile('mvik_key', { z: 7, x: 1, y: 1 }), InvalidKey);
+});

@@ -349,6 +349,39 @@ class MeteoVeoDevice extends Homey.Device {
     };
   }
 
+  /**
+   * Data for the radar widget (widgets/radar/api.js): the place and the frame
+   * lists. The key stays on the Homey - the widget asks the app for the tiles.
+   */
+  async radarData(hours = 2) {
+    const key = this.getStoreValue('key');
+    if (!key) return { state: 'unavailable' };
+    if (!this._home) await this.refresh({ force: true }).catch(() => {});
+    const place = this._home && this._home.place;
+    if (!place) return { state: this.getAvailable() ? 'loading' : 'unavailable' };
+    try {
+      const lists = await this.homey.app.client.radarFrames(key, hours);
+      return {
+        state: 'ok',
+        name: this.getName(),
+        language: this.homey.i18n.getLanguage(),
+        timezone: this._tz(),
+        place,
+        lat: place.lat,
+        lon: place.lon,
+        ...lists,
+      };
+    } catch (err) {
+      this.error('radar frames', err.message);
+      return { state: 'unavailable' };
+    }
+  }
+
+  /** The device's key for the app's radar-tile proxy; null when the device has none. */
+  radarKey() {
+    return this.getStoreValue('key') || null;
+  }
+
   // --- Lifecycle -------------------------------------------------------------
 
   async onDeleted() {

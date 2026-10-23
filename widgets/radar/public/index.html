@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    /* MeteoVeo Radar: the app's radar card - our relief under the coloured
+       radar composite, the place's pin in the middle, the last two hours in a
+       loop. Same tokens as the main widget (glass pills, cobalt, ink). */
+    :root {
+      --mv-cobalt: #2b6fa8; --mv-ochre: #dfa137; --mv-ink: #12302b;
+      --frame-radius: var(--homey-border-radius-default, 16px);
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --pill: rgba(18,48,43,.62); --pill-fg: #fff;
+    }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: var(--font); color: var(--homey-text-color, #222); -webkit-font-smoothing: antialiased; background: transparent; }
+    button { font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+
+    .wrap { background: var(--homey-background-color, #fff); border-radius: var(--frame-radius); overflow: hidden; -webkit-mask-image: -webkit-radial-gradient(white, black); }
+    .map { position: relative; width: 100%; background: #bcd4df; overflow: hidden; }
+    .map canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .map .pin { position: absolute; left: 0; top: 0; width: 22px; height: 22px; margin: -11px 0 0 -11px; pointer-events: none; filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); z-index: 1; }
+    .map .pin svg { display: block; }
+    .pill { position: absolute; display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; background: var(--pill); color: var(--pill-fg); font-size: 12px; font-weight: 600; line-height: 1.2; max-width: calc(100% - 24px); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+    .pill.place { left: 10px; top: 10px; font-weight: 500; }
+    .pill.place span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pill.time { left: 10px; bottom: 10px; font-family: var(--mono); font-size: 12.5px; letter-spacing: .02em; }
+    .pill.time .dot { width: 7px; height: 7px; border-radius: 50%; background: #5fbf98; }
+    .pill.time.fc .dot { background: var(--mv-ochre); }
+    .pill.time.old .dot { background: rgba(255,255,255,.55); }
+    .legend { position: absolute; right: 10px; top: 10px; display: flex; align-items: center; gap: 2px; padding: 5px 8px; border-radius: 999px; background: var(--pill); color: var(--pill-fg); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+    .legend i { display: block; width: 14px; height: 8px; border-radius: 2px; }
+    .legend b { font-family: var(--mono); font-size: 9px; font-weight: 500; margin-left: 4px; opacity: .85; }
+    .legend span { font-family: var(--mono); font-size: 8.5px; opacity: .8; margin-right: 1px; }
+    .state { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20px; color: #fff; background: rgba(18,48,43,.35); font-size: 14px; }
+    .state.quiet { background: transparent; color: var(--homey-text-color, #222); }
+
+    .controls { display: flex; align-items: center; gap: 10px; padding: 10px 12px 6px; }
+    .play { flex: none; width: 36px; height: 36px; border-radius: 50%; background: var(--mv-cobalt); color: #fff; display: flex; align-items: center; justify-content: center; }
+    .play svg { width: 16px; height: 16px; fill: currentColor; }
+    .play:disabled { opacity: .4; cursor: default; }
+    .timeline { flex: 1; display: flex; gap: 2px; height: 28px; align-items: center; min-width: 0; }
+    .timeline button { flex: 1; min-width: 0; height: 28px; position: relative; }
+    .timeline button::before { content: ""; position: absolute; left: 1px; right: 1px; top: 11px; height: 6px; border-radius: 3px; background: var(--homey-line-color, #d9d9de); }
+    .timeline button.fc::before { background: transparent; border: 1px dashed var(--mv-ochre); top: 10px; height: 5px; }
+    .timeline button.active::before { background: var(--mv-cobalt); top: 8px; height: 12px; }
+    .timeline button.fc.active::before { background: var(--mv-ochre); border-color: var(--mv-ochre); }
+    .timeline button.pending::before { opacity: .35; }
+    .credit { padding: 0 12px 10px; font-size: 9.5px; line-height: 1.35; color: var(--homey-text-color-light, #777); }
+  </style>
+</head>
+<body class="homey-widget-full">
+  <div id="root"></div>
+  <script src="i18n.js"></script>
+  <script type="text/javascript">
+    function onHomeyReady(Homey) {
+      const root = document.getElementById('root');
+      const settings = Homey.getSettings() || {};
+      const deviceId = settings.device && settings.device.id ? settings.device.id : '';
+      const ZOOMS = { local: 10, comarca: 9, region: 7 };
+      const zoomLevel = ZOOMS[settings.zoom] || ZOOMS.comarca;
+      const TILE = 256;
+      // The radar layer is drawn from z8 tiles whatever the map zoom (upscaled under the finer relief):
+      // z8 is the product's native resolution, and the nowcast instants are served at z8 only
+      // (z9: 404 for every forecast instant, and for some areas even observed - measured 2026-10-23).
+      const RADAR_MAX_Z = 8;
+      const MAX_FRAMES = 14;       // decoded frames kept at once (each one stage-sized canvas)
+      const FRAME_MS = 480;        // the loop's pace
+      const HOLD_MS = 1600;        // the pause on the last frame
+      const REFRESH_MS = 5 * 60000;
+      const LEGEND = [['rgb(80,170,255)', '10'], ['rgb(0,110,255)', '20'], ['rgb(255,220,0)', '30'], ['rgb(255,140,0)', '40'], ['rgb(255,40,40)', '50+']];
+      const RELIEF = 'https://www.meteoveo.com/relieve';
+
+      let dict = MV_RADAR_I18N.es; let locale = 'es-ES';
+      function pickLanguage(d) {
+        const pref = settings.language && settings.language !== 'auto' ? settings.language : (d && d.language === 'es' ? 'es' : 'en');
+        dict = MV_RADAR_I18N[pref] || MV_RADAR_I18N.en; locale = dict.locale;
+      }
+      function t(key, vars) {
+        let s = dict[key]; if (s === undefined) s = MV_RADAR_I18N.en[key]; if (s === undefined) return key;
+        for (const k of Object.keys(vars || {})) s = s.split('__' + k + '__').join(String(vars[k]));
+        return s;
+      }
+      const hhmm = (iso, tz) => new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz }).format(new Date(iso));
+      function el(tag, className, text) { const n = document.createElement(tag); if (className) n.className = className; if (text != null) n.textContent = text; return n; }
+      function html(tag, className, markup) { const n = el(tag, className); n.innerHTML = markup; return n; }
+      const haptic = () => { if (typeof Homey.hapticFeedback === 'function') { try { Homey.hapticFeedback(); } catch (e) { /* none */ } } };
+
+      // ---- Geometry (the web's episodio-radar stage, centred on the place) --------
+      const worldX = (lon, z) => ((lon + 180) / 360) * TILE * 2 ** z;
+      const worldY = (lat, z) => { const c = Math.max(-85.05, Math.min(85.05, lat)); return ((1 - Math.asinh(Math.tan((c * Math.PI) / 180)) / Math.PI) / 2) * TILE * 2 ** z; };
+      function stageFor(lat, lon, W, H) {
+        const z = zoomLevel;
+        const ox = worldX(lon, z) - W / 2; const oy = worldY(lat, z) - H / 2;
+        const relief = [];
+        for (let ty = Math.floor(oy / TILE); ty <= Math.floor((oy + H - 1) / TILE); ty++) {
+          for (let tx = Math.floor(ox / TILE); tx <= Math.floor((ox + W - 1) / TILE); tx++) {
+            relief.push({ url: `${RELIEF}/${z}/${tx}/${ty}.webp`, left: tx * TILE - ox, top: ty * TILE - oy });
+          }
+        }
+        // z8 under the local and district maps; z6 under the region map (z7 answers 404 for whole
+        // areas on the coloured path - measured 2026-10-23 - and z6 is still ~2 km/px there).
+        const rz = z >= RADAR_MAX_Z ? RADAR_MAX_Z : 6; const size = TILE * 2 ** (z - rz);
+        const radar = [];
+        for (let ty = Math.floor(oy / size); ty <= Math.floor((oy + H - 1) / size); ty++) {
+          for (let tx = Math.floor(ox / size); tx <= Math.floor((ox + W - 1) / size); tx++) {
+            radar.push({ z: rz, x: tx, y: ty, left: tx * size - ox, top: ty * size - oy, size });
+          }
+        }
+        return { z, relief, radar, pin: [worldX(lon, z) - ox, worldY(lat, z) - oy] };
+      }
+
+      // ---- State ----------------------------------------------------------------
+      let data = null;           // the last /radar answer
+      let stage = null; let W = 0; let H = 0; let dpr = 1;
+      let frames = [];           // [{ at, kind: 'obs'|'fc', status: 'pending'|'ready'|'missing', canvas }]
+      let index = 0; let playing = true; let timer = null; let loadToken = 0;
+      let base = null; let layer = null; let timePill = null; let timeline = null; let playBtn = null; let stateBox = null;
+
+      function loadImage(src) {
+        return new Promise((resolve) => { const img = new Image(); img.onload = () => resolve(img); img.onerror = () => resolve(null); img.src = src; });
+      }
+
+      async function drawBase() {
+        const ctx = base.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.fillStyle = '#bcd4df'; ctx.fillRect(0, 0, W, H);
+        await Promise.all(stage.relief.map(async (tile) => {
+          const img = await loadImage(tile.url);
+          if (img && base.isConnected) ctx.drawImage(img, tile.left, tile.top, TILE, TILE);
+        }));
+      }
+
+      /** One frame: its radar tiles through the app (the key stays there), composited into one stage-sized canvas. */
+      async function loadFrame(frame, token) {
+        let tiles;
+        try {
+          tiles = await Homey.api('POST', '/tiles', { device: deviceId, tiles: stage.radar.map((r) => ({ z: r.z, x: r.x, y: r.y, at: frame.at })) });
+        } catch (err) { tiles = null; }
+        if (token !== loadToken) return;
+        // null = the server has no tile there (404 = EMPTY, ADR-0171: a dry area or a quiet instant,
+        // a frame to show clear); { error } = could not be fetched. Only an all-error frame is dropped.
+        const list = Array.isArray(tiles) ? tiles : null;
+        if (!list || (list.length && list.every((x) => x && x.error))) { frame.status = 'missing'; frame.canvas = null; return; }
+        if (!list.some((x) => x && x.data)) { frame.status = 'ready'; frame.canvas = null; return; }
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+        const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.imageSmoothingEnabled = true;
+        await Promise.all(stage.radar.map(async (r, i) => {
+          const tile = list[i]; if (!tile || !tile.data) return;
+          const img = await loadImage(`data:${tile.type || 'image/png'};base64,${tile.data}`);
+          if (img) ctx.drawImage(img, r.left, r.top, r.size, r.size);
+        }));
+        if (token !== loadToken) return;
+        frame.canvas = canvas; frame.status = 'ready';
+      }
+
+      function visibleFrames() { return frames.filter((f) => f.status !== 'missing'); }
+
+      function show(i) {
+        const list = visibleFrames();
+        if (!list.length) return;
+        index = ((i % list.length) + list.length) % list.length;
+        const f = list[index];
+        const ctx = layer.getContext('2d');
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, layer.width, layer.height);
+        if (f.canvas) ctx.drawImage(f.canvas, 0, 0);
+        // The time pill: "Ahora · 15:40" on the latest observed frame, the time on older ones, "+40 min" on a forecast.
+        const nowMs = Date.now();
+        const latestObs = list.filter((x) => x.kind === 'obs').slice(-1)[0];
+        timePill.className = 'pill time' + (f.kind === 'fc' ? ' fc' : f === latestObs ? '' : ' old');
+        let label;
+        if (f.kind === 'fc') label = t('forecast', { minutes: Math.max(10, Math.round((Date.parse(f.at) - nowMs) / 600000) * 10) });
+        else if (f === latestObs) label = t('now') + ' · ' + hhmm(f.at, data.timezone);
+        else label = hhmm(f.at, data.timezone);
+        timePill.innerHTML = '<span class="dot"></span>';
+        timePill.append(document.createTextNode(label));
+        if (f === latestObs) {
+          const age = Math.round((nowMs - Date.parse(f.at)) / 60000);
+          if (age > 15) timePill.append(document.createTextNode(' · ' + t('age', { minutes: age })));
+        }
+        [...timeline.children].forEach((b, k) => b.classList.toggle('active', k === index));
+      }
+
+      function tick() {
+        clearTimeout(timer); timer = null;
+        if (!playing || document.hidden) return;
+        const list = visibleFrames();
+        if (list.length < 2) return;
+        show(index + 1);
+        timer = setTimeout(tick, index === list.length - 1 ? HOLD_MS : FRAME_MS);
+      }
+      function setPlaying(on) {
+        playing = on;
+        playBtn.innerHTML = on ? '<svg viewBox="0 0 24 24"><path d="M7 5h4v14H7zm6 0h4v14h-4z"/></svg>' : '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+        playBtn.setAttribute('aria-label', t(on ? 'pause' : 'play'));
+        clearTimeout(timer); timer = null;
+        if (on) timer = setTimeout(tick, FRAME_MS);
+      }
+
+      function buildTimeline() {
+        timeline.textContent = '';
+        visibleFrames().forEach((f, k) => {
+          const b = el('button', (f.kind === 'fc' ? 'fc' : '') + (f.status === 'pending' ? ' pending' : ''));
+          b.type = 'button';
+          b.setAttribute('aria-label', f.kind === 'fc' ? t('frame_forecast', { minutes: Math.max(10, Math.round((Date.parse(f.at) - Date.now()) / 600000) * 10) }) : t('frame', { time: hhmm(f.at, data.timezone) }));
+          b.addEventListener('click', () => { haptic(); setPlaying(false); show(k); });
+          timeline.append(b);
+        });
+        [...timeline.children].forEach((b, k) => b.classList.toggle('active', k === index));
+      }
+
+      /** Merge the lists from the server into the frame set, keeping what is already decoded. */
+      function mergeFrames(d) {
+        const wanted = [...(d.frames || []).map((at) => ({ at, kind: 'obs' })), ...(d.forecast || []).map((at) => ({ at, kind: 'fc' }))];
+        // The memory cap: drop the oldest observed frames first.
+        while (wanted.length > MAX_FRAMES) { const i = wanted.findIndex((w) => w.kind === 'obs'); wanted.splice(i >= 0 ? i : 0, 1); }
+        const keep = new Map(frames.map((f) => [f.at + f.kind, f]));
+        frames = wanted.map((w) => keep.get(w.at + w.kind) || { at: w.at, kind: w.kind, status: 'pending', canvas: null });
+        const list = visibleFrames();
+        if (index >= list.length) index = Math.max(0, list.length - 1);
+      }
+
+      async function loadAll() {
+        const token = ++loadToken;
+        const pending = frames.filter((f) => f.status === 'pending');
+        // Two at a time: the Homey answers one frame per call; the base map arrives meanwhile.
+        let next = 0;
+        const worker = async () => { while (next < pending.length && token === loadToken) { const f = pending[next++]; await loadFrame(f, token); if (token === loadToken) { buildTimeline(); if (!playing || !timer) show(index); } } };
+        await Promise.all([worker(), worker()]);
+        if (token !== loadToken) return;
+        const list = visibleFrames();
+        if (!list.length) { setState(frames.length ? 'unavailable' : 'no_frames'); setPlaying(false); return; }
+        setState(null);
+        // Start on the latest observed frame, then loop from the start.
+        const latest = list.map((f) => f.kind).lastIndexOf('obs');
+        show(latest >= 0 ? latest : list.length - 1);
+        if (playing) setPlaying(true);
+        window.__mvRadarReady = true;
+      }
+
+      function setState(key) {
+        if (!stateBox) return;
+        stateBox.textContent = key ? t(key) : '';
+        stateBox.style.display = key ? 'flex' : 'none';
+        if (key && timePill) timePill.style.display = 'none';
+      }
+
+      // ---- Layout ------------------------------------------------------------------
+      let height = 0;
+      function fit() { const h = Math.ceil(root.getBoundingClientRect().height); if (h && h !== height) { height = h; Homey.setHeight(h); } }
+
+      function render(d) {
+        data = d; pickLanguage(d);
+        root.textContent = '';
+        const wrap = el('div', 'wrap');
+        W = root.clientWidth || document.documentElement.clientWidth || 360;
+        H = W <= 400 ? W : Math.round(W * 0.75);
+        dpr = Math.min(2, window.devicePixelRatio || 1);
+        const map = el('div', 'map'); map.style.height = H + 'px';
+        wrap.append(map);
+        if (!d || d.state !== 'ok') {
+          map.style.height = '120px';
+          map.append(Object.assign(el('div', 'state quiet', t(d && d.state ? d.state : 'unavailable')), {}));
+          wrap.append(el('div', 'credit', t('credit')));
+          root.append(wrap); return;
+        }
+        base = el('canvas'); layer = el('canvas');
+        for (const c of [base, layer]) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
+        map.append(base, layer);
+        stage = stageFor(d.lat, d.lon, W, H);
+        // Markup, not createElement('svg'): that would be an HTML-namespace element and draw nothing.
+        const pin = html('div', 'pin', '<svg viewBox="0 0 22 22" width="22" height="22"><circle cx="11" cy="11" r="9" fill="#2b6fa8" fill-opacity=".25" stroke="#fff" stroke-width="2"/><circle cx="11" cy="11" r="3.5" fill="#fff"/><circle cx="11" cy="11" r="2" fill="#2b6fa8"/></svg>');
+        pin.style.left = stage.pin[0] + 'px'; pin.style.top = stage.pin[1] + 'px';
+        map.append(pin);
+        const place = el('div', 'pill place'); place.append(el('span', '', d.place && d.place.name ? d.place.name : d.name || ''));
+        const legend = el('div', 'legend');
+        for (const [color, label] of LEGEND) { const i = el('i'); i.style.background = color; i.title = label; legend.append(i); }
+        legend.append(el('b', '', LEGEND[0][1] + '–' + LEGEND[LEGEND.length - 1][1] + ' ' + t('legend')));
+        timePill = el('div', 'pill time'); timePill.style.display = 'none';
+        stateBox = el('div', 'state'); stateBox.textContent = t('loading');
+        map.append(place, legend, timePill, stateBox);
+        const controls = el('div', 'controls');
+        playBtn = el('button', 'play'); playBtn.type = 'button';
+        playBtn.addEventListener('click', () => { haptic(); setPlaying(!playing); });
+        timeline = el('div', 'timeline');
+        controls.append(playBtn, timeline);
+        wrap.append(controls, el('div', 'credit', t('credit')));
+        root.append(wrap);
+        // The pin is drawn over the map because the svg is sized by CSS; make sure the time pill shows once a frame is ready.
+        const observer = new MutationObserver(() => { if (timePill.textContent) { timePill.style.display = 'flex'; observer.disconnect(); } });
+        observer.observe(timePill, { childList: true });
+        frames = [];
+        mergeFrames(d);
+        buildTimeline();
+        setPlaying(true);
+        drawBase();
+        loadAll();
+      }
+
+      async function load(first) {
+        let d;
+        try { d = await Homey.api('GET', '/radar?device=' + encodeURIComponent(deviceId)); } catch (err) { d = { state: 'unavailable' }; }
+        if (first || !data || data.state !== 'ok' || d.state !== 'ok' || d.lat !== data.lat || d.lon !== data.lon) { render(d); fit(); return; }
+        // A refresh: new frames join, old ones leave, the decoded ones stay.
+        data = d;
+        mergeFrames(d);
+        buildTimeline();
+        loadAll();
+      }
+
+      document.addEventListener('visibilitychange', () => { if (document.hidden) { clearTimeout(timer); timer = null; } else if (playing) setPlaying(true); });
+      let resizeTimer = null;
+      window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (data) { render(data); fit(); } }, 150); });
+
+      // A hook for the preview harness only (no behaviour depends on it).
+      window.__mvRadar = {
+        show: (i) => { setPlaying(false); show(i); },
+        frames: () => frames.map((f) => ({ at: f.at, kind: f.kind, status: f.status, painted: f.canvas ? (() => { const d = f.canvas.getContext('2d').getImageData(0, 0, f.canvas.width, f.canvas.height).data; let n = 0; for (let k = 3; k < d.length; k += 4) if (d[k] > 0) n++; return n; })() : 0 })),
+      };
+
+      load(true).finally(() => { height = Math.ceil(root.getBoundingClientRect().height) || 420; Homey.ready({ height }); });
+      setInterval(() => load(false), REFRESH_MS);
+    }
+  </script>
+</body>
+</html>
