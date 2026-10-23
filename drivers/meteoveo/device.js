@@ -257,6 +257,11 @@ class MeteoVeoDevice extends Homey.Device {
   }
 
   async locationChanged(place) {
+    const before = this.getStoreValue('place');
+    // A name the user never changed ("MeteoVeo <old town>") follows the move.
+    if (place && place.name && before && before.name && this.getName() === `MeteoVeo ${before.name}`) {
+      await this.setName(`MeteoVeo ${place.name}`).catch(this.error);
+    }
     if (place) await this.setStoreValue('place', place);
     this._etag = null;
     await this.refresh({ force: true });

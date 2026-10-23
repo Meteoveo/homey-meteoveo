@@ -61,6 +61,12 @@ class MeteoVeoDriver extends Homey.Driver {
     const email = (raw) => String(raw || '').trim().toLowerCase();
 
     on('homey_location', async () => this._homeyLocation());
+    on('current_location', async () => device.getStoreValue('place') || null);
+    // The town search opens with the device's own integration key (no sign-in in Repair).
+    on('search_places', async ({ q }) => {
+      const query = String(q || '').trim();
+      return query.length < 2 ? [] : client.searchSettlements(device.getStoreValue('key'), query);
+    });
 
     on('login_again', async ({ email: address, password }) => {
       const account = await client.login({ email: email(address), password: String(password || '') });
