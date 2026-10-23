@@ -1,0 +1,22 @@
+{
+  "name": "com.meteoveo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MeteoVeo for Homey Pro: hyperlocal weather for Spain.",
+  "main": "app.js",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "validate": "homey app validate --level publish",
+    "lint:json": "node scripts/check-locales.js"
+  },
+  "dependencies": {
+    "homey-api": "3.20.1"
+  },
+  "devDependencies": {
+    "homey": "4.6.0"
+  }
+}
