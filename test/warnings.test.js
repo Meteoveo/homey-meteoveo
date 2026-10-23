@@ -43,3 +43,30 @@ test('level comparison for the condition card', () => {
   assert.equal(levelAtLeast('red', 'red'), true);
   assert.equal(levelAtLeast('none', 'yellow'), false);
 });
+
+const { levelTransition, phenomenonActive, PHENOMENA } = require('../lib/warnings');
+
+test('level transitions: cleared when the last warning goes, changed between levels', () => {
+  assert.deepEqual(levelTransition('none', 'none'), []);
+  assert.deepEqual(levelTransition('none', 'yellow'), [{ type: 'warning_level_changed', level: 'yellow', previous: 'none' }]);
+  assert.deepEqual(levelTransition('yellow', 'orange'), [{ type: 'warning_level_changed', level: 'orange', previous: 'yellow' }]);
+  assert.deepEqual(levelTransition('orange', 'none'), [
+    { type: 'warning_level_changed', level: 'none', previous: 'orange' },
+    { type: 'warning_cleared' },
+  ]);
+  // The first poll after start has no history: no transition is invented.
+  assert.deepEqual(levelTransition(null, 'orange'), []);
+});
+
+test('a phenomenon warning at or above a level is active', () => {
+  const ws = [{ phenomenon: 'PR', level: 'yellow' }, { phenomenon: 'VI', level: 'orange' }];
+  assert.equal(phenomenonActive(ws, 'PR', 'yellow'), true);
+  assert.equal(phenomenonActive(ws, 'PR', 'orange'), false);
+  assert.equal(phenomenonActive(ws, 'VI', 'orange'), true);
+  assert.equal(phenomenonActive(ws, 'TO', 'yellow'), false);
+  assert.equal(phenomenonActive(undefined, 'TO', 'yellow'), false);
+});
+
+test('the phenomenon list matches the AEMET codes the server uses', () => {
+  assert.deepEqual(PHENOMENA, ['PR', 'TO', 'NE', 'VI', 'CO', 'CA', 'BF', 'NI', 'PO', 'DP', 'AL']);
+});

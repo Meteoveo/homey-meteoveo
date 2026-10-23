@@ -26,7 +26,7 @@ test('dry to expected fires rain_expected once, with minutes until the start', (
     [min(5), hour({ rainSoon: true, rainStartsAt: '2026-10-23T12:30:00Z' })],
     [min(10), hour({ rainSoon: true, rainStartsAt: '2026-10-23T12:30:00Z' })],
   ]);
-  assert.deepEqual(events, [{ at: min(5), type: 'rain_expected', minutes: 25 }]);
+  assert.deepEqual(events, [{ at: min(5), type: 'rain_expected', minutes: 25, band: 'none' }]);
 });
 
 test('expected then raining fires rain_started', () => {
@@ -116,4 +116,50 @@ test('a step that is already over does not count, a running one does', () => {
 test('without steps the answer is unknown (null), not false', () => {
   assert.equal(rainWithinMinutes(null, 10, Date.now()), null);
   assert.equal(rainWithinMinutes({ steps: [] }, 10, Date.now()), null);
+});
+
+test('rain_ending fires once per episode when the end comes into view, with minutes until then', () => {
+  const { events } = run([
+    [min(0), hour({ rainNow: true, rainSoon: true })],
+    [min(5), hour({ rainNow: true, rainSoon: true, rainEndsAt: '2026-10-23T12:25:00Z' })],
+    [min(10), hour({ rainNow: true, rainSoon: true, rainEndsAt: '2026-10-23T12:25:00Z' })],
+  ]);
+  assert.deepEqual(events.map((e) => [e.type, e.minutes]), [['rain_started', undefined], ['rain_ending', 20]]);
+});
+
+test('a new rain episode can announce its end again', () => {
+  const { events } = run([
+    [min(0), hour({ rainNow: true, rainEndsAt: '2026-10-23T12:10:00Z' })],
+    [min(10), hour({})],
+    [min(15), hour({})],
+    [min(60), hour({ rainNow: true, rainEndsAt: '2026-10-23T13:20:00Z' })],
+  ]);
+  assert.deepEqual(events.map((e) => e.type), ['rain_started', 'rain_ending', 'rain_stopped', 'rain_started', 'rain_ending']);
+});
+
+test('rain_expected carries the strongest band of the coming hour', () => {
+  const steps = [
+    { at: '2026-10-23T12:10:00Z', band: 'none' },
+    { at: '2026-10-23T12:20:00Z', band: 'light' },
+    { at: '2026-10-23T12:30:00Z', band: 'heavy' },
+    { at: '2026-10-23T13:40:00Z', band: 'heavy' },
+  ];
+  const { events } = run([[min(0), hour({ rainSoon: true, rainStartsAt: '2026-10-23T12:20:00Z', steps })]]);
+  assert.equal(events[0].band, 'heavy');
+});
+
+const { rainIntensityWithin } = require('../lib/rain');
+
+test('rain of at least an intensity within N minutes', () => {
+  const nextHour = { steps: [
+    { at: '2026-10-23T12:00:00Z', band: 'light' },
+    { at: '2026-10-23T12:40:00Z', band: 'moderate' },
+    { at: '2026-10-23T14:30:00Z', band: 'heavy' },
+  ] };
+  const now = Date.parse('2026-10-23T12:00:00Z');
+  assert.equal(rainIntensityWithin(nextHour, 'moderate', 30, now), false);
+  assert.equal(rainIntensityWithin(nextHour, 'moderate', 60, now), true);
+  assert.equal(rainIntensityWithin(nextHour, 'heavy', 120, now), false);
+  assert.equal(rainIntensityWithin(nextHour, 'heavy', 180, now), true);
+  assert.equal(rainIntensityWithin(null, 'heavy', 180, now), null);
 });
