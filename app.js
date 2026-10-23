@@ -49,6 +49,14 @@ class MeteoVeoApp extends Homey.App {
     flow.getConditionCard('rain_chance_above')
       .registerRunListener(async ({ device, day, percent }) => device.rainChanceAbove(Number(day), Number(percent)));
     flow.getActionCard('get_forecast').registerRunListener(async ({ device, day }) => device.forecastTokens(Number(day)));
+    flow.getConditionCard('gust_within')
+      .registerRunListener(async ({ device, speed, hours }) => device.gustWithin(Number(speed), Number(hours)));
+    flow.getConditionCard('is_sunny').registerRunListener(async ({ device }) => device.sunnyNow());
+    flow.getConditionCard('temp_max_above')
+      .registerRunListener(async ({ device, day, temp }) => device.maxAbove(Number(day), Number(temp)));
+    flow.getConditionCard('tropical_night').registerRunListener(async ({ device }) => device.tropicalNightTonight());
+    flow.getConditionCard('cooler_outside')
+      .registerRunListener(async ({ device, indoor, margin }) => device.coolerOutsideThan(indoor, margin));
 
     this.homey.dashboards.getWidget('weather')
       .registerSettingAutocompleteListener('device', async (query) => this._locations(query));

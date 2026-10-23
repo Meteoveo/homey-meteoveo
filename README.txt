@@ -14,3 +14,13 @@ Own a weather station? Choose its devices in Homey, or send readings with Flows,
 Coverage: mainland Spain, the Balearic and Canary Islands, Ceuta and Melilla.
 
 Removing the device only disconnects this Homey. To delete your MeteoVeo account, open the device and choose Repair.
+
+Ideas for your Flows:
+- Awning: when rain is on its way, or gusts above 40 km/h are expected within 1 hour, retract the awning.
+- Sun and heat: if the sun is shining and today's maximum is above 30 °C, lower the awning or the blinds at midday.
+- Watering: before watering, if today's chance of rain is above 60 %, skip it.
+- Warnings: when a warning is issued, send a notification with the radar image.
+- Fresh air: in the evening, if it is at least 2 °C cooler outside than inside, open the windows instead of running the air conditioning.
+- Tropical nights: if tonight will be a tropical night, schedule the bedroom air conditioning.
+
+Orange and red AEMET warnings reach the Homey timeline without any Flow; change it in the device settings. The outdoor temperature is kept out of your rooms' climate.

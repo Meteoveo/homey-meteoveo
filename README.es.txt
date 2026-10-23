@@ -14,3 +14,13 @@ Se configura en un minuto: al añadir el dispositivo creas una cuenta gratuita d
 Cobertura: España peninsular, Baleares, Canarias, Ceuta y Melilla.
 
 Quitar el dispositivo solo desconecta este Homey. Para eliminar tu cuenta de MeteoVeo, abre el dispositivo y elige Reparar.
+
+Ideas para tus Flows:
+- Toldo: cuando va a empezar a llover, o si se esperan rachas de más de 40 km/h en 1 hora, recoge el toldo.
+- Sol y calor: si hace sol y la máxima de hoy supera 30 °C, baja el toldo o las persianas a mediodía.
+- Riego: antes de regar, si la probabilidad de lluvia de hoy es mayor que 60 %, sáltate el riego.
+- Avisos: cuando se activa un aviso, envía una notificación con la imagen del radar.
+- Ventilar: por la noche, si fuera hace al menos 2 °C menos que dentro, abre las ventanas en lugar de encender el aire.
+- Noches tropicales: si esta noche será tropical, programa el aire acondicionado del dormitorio.
+
+Los avisos naranjas y rojos de AEMET llegan a la línea de tiempo de Homey sin crear ningún Flow; se cambia en los ajustes del dispositivo. La temperatura exterior no se mezcla con la de tus habitaciones.
