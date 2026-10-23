@@ -98,7 +98,11 @@
         const worst = (d.warnings || []).slice().sort((a, b) => (order[b.level] || 0) - (order[a.level] || 0))[0];
         if (worst) root.append(el('div', 'warn ' + worst.level, t('levels.' + worst.level) + ' · ' + (worst.phenomenonName || '')));
 
-        const age = d.nextHour ? t('widget.age', { minutes: d.nextHour.ageMinutes }) + ' · ' : '';
+        // Age from the run time, not ageMinutes: after a 304 the kept response
+        // would show the age it had when it was first fetched.
+        const issued = d.nextHour ? Date.parse(d.nextHour.issuedAt) : NaN;
+        const minutes = Number.isNaN(issued) ? (d.nextHour && d.nextHour.ageMinutes) : Math.max(0, Math.round((Date.now() - issued) / 60000));
+        const age = d.nextHour && minutes != null ? t('widget.age', { minutes }) + ' · ' : '';
         root.append(el('div', 'foot', age + (d.attribution || '')));
       }
 
