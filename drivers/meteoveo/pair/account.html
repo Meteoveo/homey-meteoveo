@@ -3,7 +3,7 @@
   <p class="homey-subtitle" data-i18n="pair.account.subtitle"></p>
 </header>
 
-<form class="homey-form" id="form" onsubmit="return false">
+<form class="homey-form" id="form">
   <fieldset class="homey-form-radio-set">
     <label class="homey-form-radio">
       <input class="homey-form-radio-input" type="radio" name="mode" value="signup" checked />
@@ -84,7 +84,14 @@
     Homey.alert(text && text !== key ? text : t('errors.unknown'), 'error');
   }
 
-  document.getElementById('submit').addEventListener('click', async () => {
+  let busy = false;
+  document.querySelector('form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (busy) return;
+    busy = true;
+    try { await submit(); } finally { busy = false; }
+  });
+  async function submit() {
     const data = {
       email: document.getElementById('email').value,
       password: document.getElementById('password').value,
@@ -105,5 +112,5 @@
     } finally {
       Homey.hideLoadingOverlay();
     }
-  });
+  }
 </script>
