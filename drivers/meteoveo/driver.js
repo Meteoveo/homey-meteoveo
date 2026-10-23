@@ -14,13 +14,15 @@ function errorCode(err) {
   return 'unknown';
 }
 
-function handler(log, fn) {
+function handler(log, event, fn) {
   return async (data) => {
     try {
-      return await fn(data || {});
+      const result = await fn(data || {});
+      // Step names only: the payloads carry passwords.
+      log(`pairing: ${event} ok`);
+      return result;
     } catch (err) {
-      // Logged by class and code only: the payloads carry passwords.
-      log(`pairing step failed: ${err.name} ${errorCode(err)}`);
+      log(`pairing: ${event} failed: ${err.name} ${errorCode(err)}`);
       throw new Error(errorCode(err));
     }
   };
@@ -39,7 +41,8 @@ class MeteoVeoDriver extends Homey.Driver {
 
   async onPair(session) {
     const pairing = new PairingSession({ client: this.homey.app.client, lang: this._lang() });
-    const on = (event, fn) => session.setHandler(event, handler(this.log.bind(this), fn));
+    this.log('pairing: started');
+    const on = (event, fn) => session.setHandler(event, handler(this.log.bind(this), event, fn));
 
     on('signup', (d) => pairing.signup(d));
     on('verify', (d) => pairing.verify(d));
@@ -53,7 +56,7 @@ class MeteoVeoDriver extends Homey.Driver {
 
   async onRepair(session, device) {
     const { client } = this.homey.app;
-    const on = (event, fn) => session.setHandler(event, handler(this.log.bind(this), fn));
+    const on = (event, fn) => session.setHandler(event, handler(this.log.bind(this), event, fn));
     const email = (raw) => String(raw || '').trim().toLowerCase();
 
     on('homey_location', async () => this._homeyLocation());

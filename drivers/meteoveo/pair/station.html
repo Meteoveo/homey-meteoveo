@@ -3,7 +3,7 @@
   <p class="homey-subtitle" data-i18n="pair.station.subtitle"></p>
 </header>
 
-<form class="homey-form" onsubmit="return false">
+<form class="homey-form">
   <fieldset class="homey-form-radio-set">
     <label class="homey-form-radio">
       <input class="homey-form-radio-input" type="radio" name="have" value="no" checked />
@@ -87,7 +87,14 @@
   }
   document.querySelectorAll('input[name="have"]').forEach((el) => el.addEventListener('change', render));
 
-  document.getElementById('submit').addEventListener('click', async () => {
+  let busy = false;
+  document.querySelector('form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (busy) return;
+    busy = true;
+    try { await submit(); } finally { busy = false; }
+  });
+  async function submit() {
     const mode = have();
     let station = null;
     if (mode !== 'no') {
@@ -107,5 +114,5 @@
     } finally {
       Homey.hideLoadingOverlay();
     }
-  });
+  }
 </script>

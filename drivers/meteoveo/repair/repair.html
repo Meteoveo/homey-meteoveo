@@ -2,7 +2,7 @@
   <h1 class="homey-title" data-i18n="repair.title"></h1>
 </header>
 
-<form class="homey-form" onsubmit="return false">
+<form class="homey-form">
   <fieldset class="homey-form-radio-set">
     <label class="homey-form-radio">
       <input class="homey-form-radio-input" type="radio" name="what" value="login" checked />
@@ -90,7 +90,14 @@
     document.getElementById('lon').value = Number(here.lon).toFixed(2);
   }).catch(() => {});
 
-  button.addEventListener('click', async () => {
+  let busy = false;
+  document.querySelector('form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (busy) return;
+    busy = true;
+    try { await submit(); } finally { busy = false; }
+  });
+  async function submit() {
     const w = what();
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
@@ -113,5 +120,5 @@
     } finally {
       Homey.hideLoadingOverlay();
     }
-  });
+  }
 </script>
