@@ -23,4 +23,4 @@ Ideas for your Flows:
 - Fresh air: in the evening, if it is at least 2 °C cooler outside than inside, open the windows instead of running the air conditioning.
 - Tropical nights: if tonight will be a tropical night, schedule the bedroom air conditioning.
 
-Orange and red AEMET warnings reach the Homey timeline without any Flow; change it in the device settings. The outdoor temperature is kept out of your rooms' climate.
+Orange and red AEMET warnings reach the Homey timeline without any Flow; change it in the device settings. Tip: put the device in an outdoor zone or switch on "Exclude from climate" in its advanced settings, so the outdoor temperature does not mix with your rooms.

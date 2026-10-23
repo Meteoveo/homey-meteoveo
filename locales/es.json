@@ -46,7 +46,8 @@
       "height_hint": "Sirve para comparar tus medidas con las de las estaciones cercanas.",
       "flow_hint": "Después, crea un Flow como: Cuando cambie la temperatura de tu estación → MeteoVeo: Enviar temperatura.",
       "none": "Ninguno",
-      "found": "Hemos encontrado una estación meteorológica en tu Homey: __name__. Abajo están sus medidas seleccionadas; revísalas antes de terminar."
+      "found": "Hemos encontrado una estación meteorológica en tu Homey: __name__. Abajo están sus medidas seleccionadas; revísalas antes de terminar.",
+      "climate_tip": "Consejo: pon este dispositivo en una zona exterior (Jardín, Terraza) o activa «Excluir del clima» en sus ajustes avanzados, para que la temperatura exterior no se mezcle con la de tus habitaciones."
     }
   },
   "measurements": {
@@ -122,7 +123,8 @@
   "notifications": {
     "account_deleted": "Tu cuenta de MeteoVeo se ha eliminado. Ya puedes quitar los dispositivos de MeteoVeo.",
     "warning": "Aviso __level__ por __phenomenon__ en __place__, hasta las __until__",
-    "rain": "Lluvia en __place__ dentro de unos __minutes__ min"
+    "rain": "Lluvia en __place__ dentro de unos __minutes__ min",
+    "climate": "__device__ está en la zona «__zone__», así que su temperatura exterior cuenta en el clima de esa estancia. Muévelo a una zona exterior (Jardín, Terraza) o activa «Excluir del clima» en sus ajustes avanzados."
   },
   "intensity": {
     "none": "ninguna",

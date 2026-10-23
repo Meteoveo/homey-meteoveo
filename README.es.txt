@@ -23,4 +23,4 @@ Ideas para tus Flows:
 - Ventilar: por la noche, si fuera hace al menos 2 °C menos que dentro, abre las ventanas en lugar de encender el aire.
 - Noches tropicales: si esta noche será tropical, programa el aire acondicionado del dormitorio.
 
-Los avisos naranjas y rojos de AEMET llegan a la línea de tiempo de Homey sin crear ningún Flow; se cambia en los ajustes del dispositivo. La temperatura exterior no se mezcla con la de tus habitaciones.
+Los avisos naranjas y rojos de AEMET llegan a la línea de tiempo de Homey sin crear ningún Flow; se cambia en los ajustes del dispositivo. Consejo: pon el dispositivo en una zona exterior o activa «Excluir del clima» en sus ajustes avanzados, para que la temperatura exterior no se mezcle con la de tus habitaciones.
