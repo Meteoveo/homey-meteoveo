@@ -360,8 +360,8 @@
           "es": "Hay rayos a menos de [[radius]]"
         },
         "hint": {
-          "en": "MeteoVeo Plus. Lightning flashes seen by the EUMETSAT MTG satellite, about 4 km precise, a few minutes after they happen.",
-          "es": "MeteoVeo Plus. Rayos vistos por el satélite MTG de EUMETSAT, con unos 4 km de precisión y pocos minutos de retraso."
+          "en": "MeteoVeo Plus. Lightning flashes seen by the EUMETSAT MTG satellite, about 4 km precise, around 10 minutes after they happen.",
+          "es": "MeteoVeo Plus. Rayos vistos por el satélite MTG de EUMETSAT, con unos 4 km de precisión y unos 10 minutos de retraso."
         },
         "args": [
           {
@@ -1038,8 +1038,8 @@
           "es": "!{{Hay|No hay}} rayos a menos de [[radius]] en los últimos 30 minutos"
         },
         "hint": {
-          "en": "MeteoVeo Plus. Lightning flashes seen by the EUMETSAT MTG satellite, about 4 km precise, a few minutes after they happen.",
-          "es": "MeteoVeo Plus. Rayos vistos por el satélite MTG de EUMETSAT, con unos 4 km de precisión y pocos minutos de retraso."
+          "en": "MeteoVeo Plus. Lightning flashes seen by the EUMETSAT MTG satellite, about 4 km precise, around 10 minutes after they happen.",
+          "es": "MeteoVeo Plus. Rayos vistos por el satélite MTG de EUMETSAT, con unos 4 km de precisión y unos 10 minutos de retraso."
         },
         "args": [
           {
