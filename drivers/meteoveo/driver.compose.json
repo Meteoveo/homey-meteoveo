@@ -1,7 +1,7 @@
 {
   "name": {
-    "en": "Forecast for your home",
-    "es": "Previsión para tu casa"
+    "en": "MeteoVeo location",
+    "es": "Ubicación de MeteoVeo"
   },
   "class": "sensor",
   "platforms": [

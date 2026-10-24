@@ -47,7 +47,7 @@
       "flow_hint": "After pairing, add a Flow such as: When the temperature of your station changes → MeteoVeo: Send temperature.",
       "none": "None",
       "found": "We found a weather station in your Homey: __name__. Its readings are selected below; check them before you finish.",
-      "climate_tip": "Tip: put this device in an outdoor zone (Garden, Terrace) or switch on “Exclude from climate” in its advanced settings, so the outdoor temperature does not mix with your rooms."
+      "climate_tip": "Tip: to keep the outdoor temperature out of your home's climate, switch on Exclude from Climate in this device's Advanced Settings."
     }
   },
   "measurements": {
@@ -124,7 +124,7 @@
     "account_deleted": "Your MeteoVeo account was deleted. You can now remove the MeteoVeo devices.",
     "warning": "__level__ warning for __phenomenon__ in __place__ until __until__",
     "rain": "Rain in __place__ in about __minutes__ min",
-    "climate": "__device__ is in the zone “__zone__”, so its outdoor temperature counts in that room's climate. Move it to an outdoor zone (Garden, Terrace) or switch on “Exclude from climate” in its advanced settings."
+    "climate": "Homey counts the outdoor temperature of __device__ in your home's climate. To keep it out, open the device's settings, then Advanced Settings, and switch on Exclude from Climate."
   },
   "intensity": {
     "none": "none",

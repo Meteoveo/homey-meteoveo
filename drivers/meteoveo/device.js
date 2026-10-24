@@ -22,6 +22,8 @@ const FLOW_READING_MAX_AGE_MS = 15 * 60_000;
 const OUTAGE_WARNING_AFTER = 3;
 // The radar picture changes with each 10-minute slice; asking more often only repeats it.
 const RADAR_IMAGE_MS = 10 * 60_000;
+// The climate tip waits until the user has chosen the zone after pairing.
+const CLIMATE_ADVICE_DELAY_MS = 10 * 60_000;
 
 // Homey's internal units for the capabilities a source device may offer.
 const DEFAULT_UNITS = {
@@ -55,7 +57,11 @@ class MeteoVeoDevice extends Homey.Device {
       await this.setUnavailable(this.homey.__('errors.signed_out'));
       return;
     }
-    this._safe(this._climateAdvice());
+    // Defaults Homey did not fill in (seen as "-" after a custom pairing).
+    if (this.getSetting('notify_warnings') == null) await this.setSettings({ notify_warnings: 'orange', notify_rain: false }).catch(this.error);
+    if (!this.getStoreValue('climateAdviceDone')) {
+      this._adviceTimer = this.homey.setTimeout(() => this._safe(this._climateAdvice()), CLIMATE_ADVICE_DELAY_MS);
+    }
     this._start();
   }
 
@@ -252,10 +258,11 @@ class MeteoVeoDevice extends Homey.Device {
   }
 
   /**
-   * The zone's climate (Homey's room temperature) averages every thermometer
-   * in it, ours included, unless the device is excluded. Apps may not change
-   * that system setting (the Web API answers "Missing Scopes"), so once per
-   * device we tell the user how to, when the device sits in an indoor zone.
+   * Homey's climate (zone and home temperature) averages every thermometer,
+   * ours included — even in an outdoor zone, the home level counts it (seen on
+   * the owner's Pro, 2026-10-24). Apps may not set `climate_exclude` (Web API:
+   * "Missing Scopes"), so once per device, ten minutes after pairing (when the
+   * user has picked the zone), we say how — unless it is already excluded.
    */
   async _climateAdvice() {
     if (this.getStoreValue('climateAdviceDone')) return;
@@ -264,10 +271,8 @@ class MeteoVeoDevice extends Homey.Device {
       const me = Object.values(await api.devices.getDevices()).find((d) => String(d.driverId || '')
         .startsWith('homey:app:com.meteoveo:') && d.data && d.data.id === this.getData().id);
       if (!me) return;
-      const zone = (await api.zones.getZones())[me.zone];
-      const excluded = me.settings && me.settings.climate_exclude === true;
-      if (!excluded && zone && !OUTDOOR.test(zone.name)) {
-        await this._notify(this.homey.__('notifications.climate', { device: this.getName(), zone: zone.name }));
+      if (!(me.settings && me.settings.climate_exclude === true)) {
+        await this._notify(this.homey.__('notifications.climate', { device: this.getName() }));
       }
       await this.setStoreValue('climateAdviceDone', true);
     } catch (err) {
@@ -513,6 +518,7 @@ class MeteoVeoDevice extends Homey.Device {
   // --- Lifecycle -------------------------------------------------------------
 
   async onDeleted() {
+    if (this._adviceTimer) this.homey.clearTimeout(this._adviceTimer);
     this._stop();
     const key = this.getStoreValue('key');
     // Removing the device revokes only this key; the account, the station and
@@ -521,6 +527,7 @@ class MeteoVeoDevice extends Homey.Device {
   }
 
   async onUninit() {
+    if (this._adviceTimer) this.homey.clearTimeout(this._adviceTimer);
     this._stop();
   }
 }
