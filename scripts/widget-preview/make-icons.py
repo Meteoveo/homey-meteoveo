@@ -115,11 +115,15 @@ def app_icon():
 
 
 def driver_icon():
-    """Weather at my place: the brand cloud with a map pin hanging below it."""
+    """The logo in negative (the owner's choice, round 10, variant F): the sky disc SOLID with the
+    cloud, the ground band and the sun cut out. Reads as MeteoVeo at 24 px and differs from the
+    app icon, which is the same logo as line art."""
+    from shapely.geometry import box
     c = CANVAS / 2
-    parts = [outline(cloud_solid(c, 340, 1.4))]
-    parts.append(pin(c, 630, 98))
-    return unary_union(parts)
+    d = disc(c, c, 430)
+    cl = cloud_solid(c - 6, c + 10, 1.9)
+    band = box(0, c + 250, CANVAS, c + 310)
+    return d.difference(cl).difference(band).difference(disc(c + 190, c - 230, 70))
 
 
 def cap_condition():
