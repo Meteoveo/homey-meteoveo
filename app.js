@@ -55,6 +55,10 @@ class MeteoVeoApp extends Homey.App {
     flow.getConditionCard('temp_max_above')
       .registerRunListener(async ({ device, day, temp }) => device.maxAbove(Number(day), Number(temp)));
     flow.getConditionCard('tropical_night').registerRunListener(async ({ device }) => device.tropicalNightTonight());
+    flow.getDeviceTriggerCard('lightning_near')
+      .registerRunListener(async ({ radius }, state) => typeof state.ring === 'number' && state.ring <= Number(radius));
+    flow.getConditionCard('lightning_within')
+      .registerRunListener(async ({ device, radius }) => device.lightningWithinRadius(Number(radius)));
     flow.getConditionCard('cooler_outside')
       .registerRunListener(async ({ device, indoor, margin }) => device.coolerOutsideThan(indoor, margin));
 
