@@ -28,7 +28,8 @@
     "measure_temperature.min_tomorrow",
     "measure_ultraviolet.max_today",
     "measure_temperature.feels_like",
-    "measure_temperature.dew_point"
+    "measure_temperature.dew_point",
+    "meteoveo_lightning_km"
   ],
   "capabilitiesOptions": {
     "measure_temperature": {

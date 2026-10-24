@@ -99,7 +99,9 @@
     "station_key_rejected": "MeteoVeo rejected the station key. Remove this location and pair it again.",
     "account_deleted": "Your MeteoVeo account was deleted.",
     "no_sources": "Choose at least one device, or pick the Flow option.",
-    "no_forecast": "There is no forecast for that day yet."
+    "no_forecast": "There is no forecast for that day yet.",
+    "plus_required": "Available with MeteoVeo Plus.",
+    "no_lightning": "There is no lightning data right now."
   },
   "levels": {
     "none": "None",

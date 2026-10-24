@@ -10,7 +10,7 @@ const {
   comfortCapabilityValues, maxGustWithin, isSunny, tropicalNight, coolerOutside, warningNotice,
 } = require('../../lib/comfort');
 const { buildWuParams, freshReadings, DailyRain } = require('../../lib/wu');
-const { OUTDOOR } = require('../../lib/station-detect');
+const { initialLightningState, nextLightningState, compass, lightningWithin, lightningCapability } = require('../../lib/lightning');
 
 // The contract asks for at most one forecast request per five minutes.
 const POLL_MS = 5 * 60_000;
@@ -174,6 +174,7 @@ class MeteoVeoDevice extends Homey.Device {
   async _apply(home) {
     const values = {
       ...capabilityValues(home, { timezone: this._tz() }), ...dailyCapabilityValues(home), ...comfortCapabilityValues(home),
+      meteoveo_lightning_km: lightningCapability(home.lightning),
     };
     for (const [capability, value] of Object.entries(values)) {
       // null shows "no value" in Homey — the honest state when the service has
@@ -205,6 +206,15 @@ class MeteoVeoDevice extends Homey.Device {
     }
 
     await this.setStoreValue('seenWarnings', warnings.seen);
+
+    // Lightning (Plus): per storm, as it comes a ring (15/30/50 km) closer.
+    const lightning = nextLightningState(this.getStoreValue('lightningState') || initialLightningState(), home.lightning);
+    await this.setStoreValue('lightningState', lightning.state);
+    for (const event of lightning.events) {
+      await this._trigger('lightning_near', {
+        distance: event.nearestKm ?? 0, direction: compass(event.bearingDeg, this._lang()), radar: await this._freshRadarImage(),
+      }, { ring: event.ring });
+    }
     for (const w of warnings.fresh) {
       await this._trigger('warning_issued', {
         level: this.homey.__(`levels.${w.level}`),
@@ -280,8 +290,8 @@ class MeteoVeoDevice extends Homey.Device {
     }
   }
 
-  _trigger(cardId, tokens) {
-    return this.homey.flow.getDeviceTriggerCard(cardId).trigger(this, tokens).catch(this.error);
+  _trigger(cardId, tokens, state = {}) {
+    return this.homey.flow.getDeviceTriggerCard(cardId).trigger(this, tokens, state).catch(this.error);
   }
 
   async _keyRejected() {
@@ -353,6 +363,13 @@ class MeteoVeoDevice extends Homey.Device {
   async coolerOutsideThan(indoorC, margin) {
     const answer = coolerOutside(await this._ensureHome(), Number(indoorC), Number(margin));
     if (answer === null) throw new Error(this.homey.__('errors.no_forecast'));
+    return answer;
+  }
+
+  async lightningWithinRadius(radiusKm) {
+    const answer = lightningWithin((await this._ensureHome() || {}).lightning, radiusKm);
+    if (answer === 'locked') throw new Error(this.homey.__('errors.plus_required'));
+    if (answer === null) throw new Error(this.homey.__('errors.no_lightning'));
     return answer;
   }
 

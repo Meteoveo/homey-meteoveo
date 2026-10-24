@@ -99,7 +99,9 @@
     "station_key_rejected": "MeteoVeo ha rechazado la clave de la estación. Quita esta ubicación y vuelve a añadirla.",
     "account_deleted": "Tu cuenta de MeteoVeo se ha eliminado.",
     "no_sources": "Elige al menos un dispositivo, o la opción de Flows.",
-    "no_forecast": "Todavía no hay previsión para ese día."
+    "no_forecast": "Todavía no hay previsión para ese día.",
+    "plus_required": "Disponible con MeteoVeo Plus.",
+    "no_lightning": "Ahora mismo no hay datos de rayos."
   },
   "levels": {
     "none": "Ninguno",

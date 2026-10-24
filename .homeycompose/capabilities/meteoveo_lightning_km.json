@@ -1,0 +1,17 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Nearest lightning",
+    "es": "Rayo más cercano"
+  },
+  "units": {
+    "en": "km",
+    "es": "km"
+  },
+  "decimals": 1,
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "insights": true,
+  "icon": "/assets/capabilities/lightning.svg"
+}

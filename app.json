@@ -348,6 +348,90 @@
             "filter": "driver_id=meteoveo"
           }
         ]
+      },
+      {
+        "id": "lightning_near",
+        "title": {
+          "en": "Lightning nearby",
+          "es": "Hay rayos cerca"
+        },
+        "titleFormatted": {
+          "en": "Lightning within [[radius]]",
+          "es": "Hay rayos a menos de [[radius]]"
+        },
+        "hint": {
+          "en": "MeteoVeo Plus. Lightning flashes seen by the EUMETSAT MTG satellite, about 4 km precise, a few minutes after they happen.",
+          "es": "MeteoVeo Plus. Rayos vistos por el satélite MTG de EUMETSAT, con unos 4 km de precisión y pocos minutos de retraso."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=meteoveo"
+          },
+          {
+            "name": "radius",
+            "type": "dropdown",
+            "title": {
+              "en": "Distance",
+              "es": "Distancia"
+            },
+            "values": [
+              {
+                "id": "15",
+                "title": {
+                  "en": "15 km",
+                  "es": "15 km"
+                }
+              },
+              {
+                "id": "30",
+                "title": {
+                  "en": "30 km",
+                  "es": "30 km"
+                }
+              },
+              {
+                "id": "50",
+                "title": {
+                  "en": "50 km",
+                  "es": "50 km"
+                }
+              }
+            ]
+          }
+        ],
+        "tokens": [
+          {
+            "name": "distance",
+            "type": "number",
+            "title": {
+              "en": "Distance (km)",
+              "es": "Distancia (km)"
+            },
+            "example": 17.4
+          },
+          {
+            "name": "direction",
+            "type": "string",
+            "title": {
+              "en": "Direction",
+              "es": "Dirección"
+            },
+            "example": {
+              "en": "WSW",
+              "es": "OSO"
+            }
+          },
+          {
+            "name": "radar",
+            "type": "image",
+            "title": {
+              "en": "Radar image",
+              "es": "Imagen del radar"
+            }
+          }
+        ]
       }
     ],
     "conditions": [
@@ -942,6 +1026,59 @@
             }
           }
         ]
+      },
+      {
+        "id": "lightning_within",
+        "title": {
+          "en": "There is !{{|no }}lightning nearby",
+          "es": "!{{Hay|No hay}} rayos cerca"
+        },
+        "titleFormatted": {
+          "en": "There is !{{|no }}lightning within [[radius]] in the last 30 minutes",
+          "es": "!{{Hay|No hay}} rayos a menos de [[radius]] en los últimos 30 minutos"
+        },
+        "hint": {
+          "en": "MeteoVeo Plus. Lightning flashes seen by the EUMETSAT MTG satellite, about 4 km precise, a few minutes after they happen.",
+          "es": "MeteoVeo Plus. Rayos vistos por el satélite MTG de EUMETSAT, con unos 4 km de precisión y pocos minutos de retraso."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=meteoveo"
+          },
+          {
+            "name": "radius",
+            "type": "dropdown",
+            "title": {
+              "en": "Distance",
+              "es": "Distancia"
+            },
+            "values": [
+              {
+                "id": "15",
+                "title": {
+                  "en": "15 km",
+                  "es": "15 km"
+                }
+              },
+              {
+                "id": "30",
+                "title": {
+                  "en": "30 km",
+                  "es": "30 km"
+                }
+              },
+              {
+                "id": "50",
+                "title": {
+                  "en": "50 km",
+                  "es": "50 km"
+                }
+              }
+            ]
+          }
+        ]
       }
     ],
     "actions": [
@@ -1380,7 +1517,8 @@
         "measure_temperature.min_tomorrow",
         "measure_ultraviolet.max_today",
         "measure_temperature.feels_like",
-        "measure_temperature.dew_point"
+        "measure_temperature.dew_point",
+        "meteoveo_lightning_km"
       ],
       "capabilitiesOptions": {
         "measure_temperature": {
@@ -1816,6 +1954,23 @@
           }
         }
       ]
+    },
+    "meteoveo_lightning_km": {
+      "type": "number",
+      "title": {
+        "en": "Nearest lightning",
+        "es": "Rayo más cercano"
+      },
+      "units": {
+        "en": "km",
+        "es": "km"
+      },
+      "decimals": 1,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "insights": true,
+      "icon": "/assets/capabilities/lightning.svg"
     },
     "meteoveo_rain_soon": {
       "type": "boolean",
