@@ -3,10 +3,6 @@
 const Homey = require('homey');
 const { PairingSession, PairingError } = require('../../lib/pairing');
 const { RequestRejected, ServiceUnavailable } = require('../../lib/client');
-const { MEASUREMENTS } = require('../../lib/wu');
-const { detectStation } = require('../../lib/station-detect');
-
-const OWN_DRIVER_PREFIX = 'homey:app:com.meteoveo:';
 
 /** Error → stable code; the views translate it with Homey.__('errors.<code>'). */
 function errorCode(err) {
@@ -51,10 +47,6 @@ class MeteoVeoDriver extends Homey.Driver {
     on('homey_location', async () => this._homeyLocation());
     on('search_places', (d) => pairing.searchPlaces(d));
     on('set_location', async (d) => pairing.setLocation(d));
-    on('station_candidates', async () => {
-      const candidates = await this._stationCandidates();
-      return { candidates, detected: detectStation(candidates) };
-    });
     on('set_station', async (d) => pairing.setStation(d.station || null));
     on('finish', (d) => pairing.finish(d));
   }
@@ -102,39 +94,6 @@ class MeteoVeoDriver extends Homey.Driver {
     });
   }
 
-  /**
-   * Weather-station devices from other apps, per measurement, for the
-   * device-mode station. Read through the Web API (homey:manager:api);
-   * nothing is read until the user opts into a station.
-   */
-  async _stationCandidates() {
-    const api = await this.homey.app.api();
-    const [devices, zones] = await Promise.all([api.devices.getDevices(), api.zones.getZones().catch(() => ({}))]);
-    const list = Object.values(devices).filter((d) => {
-      const driver = d.driverId || d.driverUri || '';
-      return !driver.startsWith(OWN_DRIVER_PREFIX);
-    });
-    const out = {};
-    for (const m of MEASUREMENTS) {
-      if (!m.capabilities.length) continue;
-      out[m.key] = list.flatMap((d) => {
-        const capability = m.capabilities.find((c) => (d.capabilities || []).includes(c));
-        if (!capability) return [];
-        const state = (d.capabilitiesObj || {})[capability] || {};
-        const zone = zones[d.zone];
-        return [{
-          deviceId: d.id,
-          driverId: d.driverId || d.driverUri || '',
-          name: d.name,
-          zone: zone ? zone.name : '',
-          capability,
-          value: typeof state.value === 'number' ? state.value : null,
-          units: state.units || '',
-        }];
-      });
-    }
-    return out;
-  }
 }
 
 module.exports = MeteoVeoDriver;

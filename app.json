@@ -19,7 +19,6 @@
     "climate"
   ],
   "permissions": [
-    "homey:manager:api",
     "homey:manager:geolocation"
   ],
   "brandColor": "#2b6fa8",
@@ -47,9 +46,9 @@
     ]
   },
   "images": {
-    "small": "/assets/images/small.png",
-    "large": "/assets/images/large.png",
-    "xlarge": "/assets/images/xlarge.png"
+    "small": "/assets/images/small.jpg",
+    "large": "/assets/images/large.jpg",
+    "xlarge": "/assets/images/xlarge.jpg"
   },
   "author": {
     "name": "Zsolt Reinhardt",
@@ -1085,12 +1084,12 @@
       {
         "id": "report_temperature",
         "title": {
-          "en": "Send temperature",
-          "es": "Enviar temperatura"
+          "en": "Send temperature to MeteoVeo",
+          "es": "Enviar temperatura a MeteoVeo"
         },
         "titleFormatted": {
-          "en": "Send temperature [[value]] °C",
-          "es": "Enviar temperatura [[value]] °C"
+          "en": "Send temperature [[value]] °C to MeteoVeo",
+          "es": "Enviar temperatura [[value]] °C a MeteoVeo"
         },
         "hint": {
           "en": "Forwards a reading from your own weather station to your MeteoVeo station.",
@@ -1118,12 +1117,12 @@
       {
         "id": "report_humidity",
         "title": {
-          "en": "Send humidity",
-          "es": "Enviar humedad"
+          "en": "Send humidity to MeteoVeo",
+          "es": "Enviar humedad a MeteoVeo"
         },
         "titleFormatted": {
-          "en": "Send humidity [[value]] %",
-          "es": "Enviar humedad [[value]] %"
+          "en": "Send humidity [[value]] % to MeteoVeo",
+          "es": "Enviar humedad [[value]] % a MeteoVeo"
         },
         "hint": {
           "en": "Forwards a reading from your own weather station to your MeteoVeo station.",
@@ -1151,12 +1150,12 @@
       {
         "id": "report_pressure",
         "title": {
-          "en": "Send station pressure",
-          "es": "Enviar presión de la estación"
+          "en": "Send station pressure to MeteoVeo",
+          "es": "Enviar presión de la estación a MeteoVeo"
         },
         "titleFormatted": {
-          "en": "Send station pressure [[value]] hPa",
-          "es": "Enviar presión de la estación [[value]] hPa"
+          "en": "Send station pressure [[value]] hPa to MeteoVeo",
+          "es": "Enviar presión de la estación [[value]] hPa a MeteoVeo"
         },
         "hint": {
           "en": "Forwards a reading from your own weather station to your MeteoVeo station.",
@@ -1184,12 +1183,12 @@
       {
         "id": "report_wind_speed",
         "title": {
-          "en": "Send wind speed",
-          "es": "Enviar velocidad del viento"
+          "en": "Send wind speed to MeteoVeo",
+          "es": "Enviar velocidad del viento a MeteoVeo"
         },
         "titleFormatted": {
-          "en": "Send wind speed [[value]] km/h",
-          "es": "Enviar velocidad del viento [[value]] km/h"
+          "en": "Send wind speed [[value]] km/h to MeteoVeo",
+          "es": "Enviar velocidad del viento [[value]] km/h a MeteoVeo"
         },
         "hint": {
           "en": "Forwards a reading from your own weather station to your MeteoVeo station.",
@@ -1217,12 +1216,12 @@
       {
         "id": "report_wind_gust",
         "title": {
-          "en": "Send wind gust",
-          "es": "Enviar racha de viento"
+          "en": "Send wind gust to MeteoVeo",
+          "es": "Enviar racha de viento a MeteoVeo"
         },
         "titleFormatted": {
-          "en": "Send wind gust [[value]] km/h",
-          "es": "Enviar racha de viento [[value]] km/h"
+          "en": "Send wind gust [[value]] km/h to MeteoVeo",
+          "es": "Enviar racha de viento [[value]] km/h a MeteoVeo"
         },
         "hint": {
           "en": "Forwards a reading from your own weather station to your MeteoVeo station.",
@@ -1250,12 +1249,12 @@
       {
         "id": "report_wind_direction",
         "title": {
-          "en": "Send wind direction",
-          "es": "Enviar dirección del viento"
+          "en": "Send wind direction to MeteoVeo",
+          "es": "Enviar dirección del viento a MeteoVeo"
         },
         "titleFormatted": {
-          "en": "Send wind direction [[value]]°",
-          "es": "Enviar dirección del viento [[value]]°"
+          "en": "Send wind direction [[value]]° to MeteoVeo",
+          "es": "Enviar dirección del viento [[value]]° a MeteoVeo"
         },
         "hint": {
           "en": "Forwards a reading from your own weather station to your MeteoVeo station.",
@@ -1283,12 +1282,12 @@
       {
         "id": "report_daily_rain",
         "title": {
-          "en": "Send rain today",
-          "es": "Enviar lluvia de hoy"
+          "en": "Send rain today to MeteoVeo",
+          "es": "Enviar lluvia de hoy a MeteoVeo"
         },
         "titleFormatted": {
-          "en": "Send rain today [[value]] mm",
-          "es": "Enviar lluvia de hoy [[value]] mm"
+          "en": "Send rain today [[value]] mm to MeteoVeo",
+          "es": "Enviar lluvia de hoy [[value]] mm a MeteoVeo"
         },
         "hint": {
           "en": "Forwards a reading from your own weather station to your MeteoVeo station.",
@@ -1316,12 +1315,12 @@
       {
         "id": "report_solar_radiation",
         "title": {
-          "en": "Send solar radiation",
-          "es": "Enviar radiación solar"
+          "en": "Send solar radiation to MeteoVeo",
+          "es": "Enviar radiación solar a MeteoVeo"
         },
         "titleFormatted": {
-          "en": "Send solar radiation [[value]] W/m²",
-          "es": "Enviar radiación solar [[value]] W/m²"
+          "en": "Send solar radiation [[value]] W/m² to MeteoVeo",
+          "es": "Enviar radiación solar [[value]] W/m² a MeteoVeo"
         },
         "hint": {
           "en": "Forwards a reading from your own weather station to your MeteoVeo station.",

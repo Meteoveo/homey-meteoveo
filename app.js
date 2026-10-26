@@ -25,7 +25,6 @@ const REPORTS = {
 class MeteoVeoApp extends Homey.App {
   async onInit() {
     this.client = new MeteoVeoClient({ version: this.homey.manifest.version });
-    this._api = null;
     // The radar widget's tiles: an in-memory LRU (observed frames are immutable) and a fetch pool of 10.
     this.radarSource = new RadarTileSource({ client: this.client, cache: new TileCache(), concurrency: 10, log: (m) => this.log(m) });
     this._radarAsks = new Map(); // deviceId -> { at, tiles } : the last stage a widget asked for
@@ -66,21 +65,6 @@ class MeteoVeoApp extends Homey.App {
       .registerSettingAutocompleteListener('device', async (query) => this._locations(query));
     this.homey.dashboards.getWidget('radar')
       .registerSettingAutocompleteListener('device', async (query) => this._locations(query));
-  }
-
-  /**
-   * The Web API, for reading the weather-station devices the user picked
-   * during pairing (homey:manager:api). Created lazily: most users have no
-   * station, and they never need it.
-   */
-  async api() {
-    if (!this._api) {
-      // Required here so a broken or missing homey-api cannot stop the
-      // forecast part of the app from starting.
-      const { HomeyAPI } = require('homey-api');
-      this._api = HomeyAPI.createAppAPI({ homey: this.homey });
-    }
-    return this._api;
   }
 
   _locations(query) {

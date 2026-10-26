@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { buildWuParams, MEASUREMENTS, DailyRain, freshReadings } = require('../lib/wu');
+const { buildWuParams, freshReadings } = require('../lib/wu');
 
 test('every conversion has a reference point (same factors as ha-meteoveo)', () => {
   const params = buildWuParams({
@@ -53,14 +53,6 @@ test('zero is a valid reading', () => {
   assert.deepEqual(buildWuParams({ daily_rain: { value: 0, unit: 'mm' } }), { dailyrainin: 0 });
 });
 
-test('the catalogue knows the Homey capability for each measurement', () => {
-  const byKey = Object.fromEntries(MEASUREMENTS.map((m) => [m.key, m]));
-  assert.deepEqual(byKey.temperature.capabilities, ['measure_temperature']);
-  assert.deepEqual(byKey.pressure.capabilities, ['measure_pressure']);
-  assert.deepEqual(byKey.wind_speed.capabilities, ['measure_wind_strength']);
-  assert.deepEqual(byKey.daily_rain.capabilities, ['meter_rain']);
-});
-
 test('only fresh readings are uploaded', () => {
   const now = Date.parse('2026-10-23T12:00:00Z');
   const readings = {
@@ -68,29 +60,4 @@ test('only fresh readings are uploaded', () => {
     humidity: { value: 50, unit: '%', at: now - 16 * 60_000 },
   };
   assert.deepEqual(Object.keys(freshReadings(readings, now, 15 * 60_000)), ['temperature']);
-});
-
-test('daily rain from a cumulative counter starts at zero each local day', () => {
-  const rain = new DailyRain();
-  assert.equal(rain.update(120.0, '2026-10-23'), 0);
-  assert.equal(rain.update(121.5, '2026-10-23'), 1.5);
-  assert.equal(rain.update(122.0, '2026-10-24'), 0);
-  assert.equal(rain.update(123.2, '2026-10-24'), 1.2);
-});
-
-test('daily rain survives a counter reset during the day', () => {
-  const rain = new DailyRain();
-  rain.update(10, '2026-10-23');
-  rain.update(12, '2026-10-23');
-  // The source app reset its counter (re-pair, battery change, its own midnight).
-  assert.equal(rain.update(0.5, '2026-10-23'), 2.5);
-  assert.equal(rain.update(1.0, '2026-10-23'), 3);
-});
-
-test('daily rain state round-trips through the device store', () => {
-  const rain = new DailyRain();
-  rain.update(10, '2026-10-23');
-  rain.update(11, '2026-10-23');
-  const restored = DailyRain.fromJSON(JSON.parse(JSON.stringify(rain)));
-  assert.equal(restored.update(12, '2026-10-23'), 2);
 });

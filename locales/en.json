@@ -40,13 +40,10 @@
       "title": "Do you have a weather station?",
       "subtitle": "Optional. Its readings make the forecast for your home more accurate, and you can follow your station in the MeteoVeo app.",
       "no": "No, just the forecast",
-      "devices": "Yes, choose its devices in Homey",
       "flow": "Yes, I will send readings with Flows",
       "height": "Sensor height above ground (cm)",
       "height_hint": "Used to compare your readings with nearby stations.",
-      "flow_hint": "After pairing, add a Flow such as: When the temperature of your station changes → MeteoVeo: Send temperature.",
-      "none": "None",
-      "found": "We found a weather station in your Homey: __name__. Its readings are selected below; check them before you finish.",
+      "flow_hint": "After pairing, add a Flow such as: When the temperature of your station changes → MeteoVeo: Send temperature to MeteoVeo.",
       "climate_tip": "Tip: to keep the outdoor temperature out of your home's climate, switch on Exclude from Climate in this device's Advanced Settings."
     }
   },
@@ -95,10 +92,8 @@
     "key_revoked": "The connection was revoked. Use Repair to sign in again.",
     "no_nowcast": "There is no next-hour forecast for this location right now.",
     "no_station": "This location has no weather station. Remove it and pair it again to add one.",
-    "measurement_from_device": "This measurement already comes from a device chosen during pairing.",
     "station_key_rejected": "MeteoVeo rejected the station key. Remove this location and pair it again.",
     "account_deleted": "Your MeteoVeo account was deleted.",
-    "no_sources": "Choose at least one device, or pick the Flow option.",
     "no_forecast": "There is no forecast for that day yet.",
     "plus_required": "Available with MeteoVeo Plus.",
     "no_lightning": "There is no lightning data right now."
@@ -126,7 +121,8 @@
     "account_deleted": "Your MeteoVeo account was deleted. You can now remove the MeteoVeo devices.",
     "warning": "__level__ warning for __phenomenon__ in __place__ until __until__",
     "rain": "Rain in __place__ in about __minutes__ min",
-    "climate": "Homey counts the outdoor temperature of __device__ in your home's climate. To keep it out, open the device's settings, then Advanced Settings, and switch on Exclude from Climate."
+    "climate": "Homey counts the outdoor temperature of __device__ in your home's climate. To keep it out, open the device's settings, then Advanced Settings, and switch on Exclude from Climate.",
+    "station_flow": "__device__: readings from your weather station now reach MeteoVeo through Flows. Add a Flow such as: When the temperature of your station changes → __device__: Send temperature to MeteoVeo. Your station stays as it is."
   },
   "intensity": {
     "none": "none",

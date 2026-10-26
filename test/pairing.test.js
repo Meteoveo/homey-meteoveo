@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { PairingSession } = require('../lib/pairing');
+const { PairingSession, upgradeStationStore } = require('../lib/pairing');
 const { RequestRejected } = require('../lib/client');
 
 function fakeClient(overrides = {}) {
@@ -72,13 +72,34 @@ test('with a station: the station is created first and bound to the key', async 
   const s = new PairingSession({ client, lang: 'es' });
   await s.login({ email: 'a@b.es', password: 'pw' });
   s.setLocation({ lat: 38.92, lon: -0.26 });
-  s.setStation({ mode: 'devices', sensorHeightCm: 150, sources: { temperature: { deviceId: 'd1', capability: 'measure_temperature' } } });
+  s.setStation({ sensorHeightCm: 150 });
   const device = await s.finish({ label: 'Casa' });
   assert.deepEqual(client.calls.map((c) => c[0]), ['login', 'createStation', 'createKey']);
   assert.equal(client.calls[2][2].stationId, 7);
   assert.deepEqual(device.store.station, { stationId: 7, ingestId: 'ING', secret: 'S' });
-  assert.equal(device.store.stationMode, 'devices');
-  assert.deepEqual(device.store.stationSources, { temperature: { deviceId: 'd1', capability: 'measure_temperature' } });
+  assert.equal(device.store.stationMode, 'flow');
+  assert.equal('stationSources' in device.store, false);
+});
+
+test('readings only come from Flow cards: a device-mode request still pairs a Flow station', async () => {
+  const client = fakeClient();
+  const s = new PairingSession({ client, lang: 'es' });
+  await s.login({ email: 'a@b.es', password: 'pw' });
+  s.setLocation({ lat: 38.92, lon: -0.26 });
+  s.setStation({ mode: 'devices', sensorHeightCm: 150, sources: { temperature: { deviceId: 'd1', capability: 'measure_temperature' } } });
+  const device = await s.finish({});
+  assert.equal(device.store.stationMode, 'flow');
+  assert.equal('stationSources' in device.store, false);
+});
+
+test('a device paired in device mode (Build 1) switches to Flow once, keeping its station', () => {
+  const station = { stationId: 7, ingestId: 'ING', secret: 'S' };
+  assert.deepEqual(
+    upgradeStationStore({ station, stationMode: 'devices', stationSources: { temperature: {} } }),
+    { stationMode: 'flow', stationSources: null, notify: true },
+  );
+  assert.equal(upgradeStationStore({ station, stationMode: 'flow' }), null);
+  assert.equal(upgradeStationStore({ station: null, stationMode: null }), null);
 });
 
 test('a location outside the service area is reported, not retried', async () => {

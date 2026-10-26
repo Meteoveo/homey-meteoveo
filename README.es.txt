@@ -1,28 +1,3 @@
-MeteoVeo es un servicio meteorológico para España hecho con medidas: radar, miles de estaciones cercanas y AEMET, combinados en una previsión de los próximos minutos y horas en tu casa.
+Entérate de la lluvia antes de que llegue. MeteoVeo es un servicio meteorológico para España hecho con medidas del radar, de miles de estaciones cercanas y de AEMET, y esta app lo lleva a tu Homey: la lluvia de la próxima hora en pasos de 10 minutos, los avisos de AEMET de tu zona y las condiciones en tu casa, listos para recoger el toldo, saltarte el riego o bajar las persianas con tus Flows. Dos widgets para el panel muestran la previsión con el aspecto de la app de MeteoVeo y el radar en bucle alrededor de tu casa, y si tienes una estación meteorológica, sus medidas enviadas con Flows hacen tu previsión aún más precisa. Disponible en la España peninsular, Baleares, Canarias, Ceuta y Melilla.
 
-Con esta app tu Homey sabe:
-- si va a llover en la próxima hora, y cuándo empieza y cuándo para;
-- la temperatura, la humedad, la presión, el viento y el índice UV de ahora en tu casa, con la máxima y la mínima de hoy y de mañana;
-- los avisos de AEMET activos en tu zona.
-
-Úsalo en tus Flows: recoge el toldo antes de que llueva, sáltate el riego del jardín o recibe una notificación con la imagen del radar cuando se active un aviso naranja. Trae dos widgets para el panel: la previsión con el aspecto de la app de MeteoVeo, con la lluvia de la próxima hora, nuestra previsión de las próximas 3 horas y los 7 días, y el radar de las últimas dos horas alrededor de tu casa, en bucle.
-
-Se configura en un minuto: al añadir el dispositivo creas una cuenta gratuita de MeteoVeo (o entras con la tuya), confirmas el código que te enviamos por correo y eliges tu ubicación. Sin claves que copiar.
-
-¿Tienes una estación meteorológica? Elige sus dispositivos en Homey, o envía las medidas con Flows, y será tu estación en MeteoVeo. Tus medidas afinan la previsión de tu casa.
-
-Cobertura: España peninsular, Baleares, Canarias, Ceuta y Melilla.
-
-Quitar el dispositivo solo desconecta este Homey. Para eliminar tu cuenta de MeteoVeo, abre el dispositivo y elige Reparar.
-
-Ideas para tus Flows:
-- Toldo: cuando va a empezar a llover, o si se esperan rachas de más de 40 km/h en 1 hora, recoge el toldo.
-- Sol y calor: si hace sol y la máxima de hoy supera 30 °C, baja el toldo o las persianas a mediodía.
-- Riego: antes de regar, si la probabilidad de lluvia de hoy es mayor que 60 %, sáltate el riego.
-- Avisos: cuando se activa un aviso, envía una notificación con la imagen del radar.
-- Ventilar: por la noche, si fuera hace al menos 2 °C menos que dentro, abre las ventanas en lugar de encender el aire acondicionado.
-- Noches tropicales: si esta noche será tropical, programa el aire acondicionado del dormitorio.
-
-Los avisos naranjas y rojos de AEMET llegan a la línea de tiempo de Homey sin crear ningún Flow; se cambia en los ajustes del dispositivo. Consejo: para que la temperatura exterior no se mezcle con el clima de tu casa, activa en los ajustes avanzados del dispositivo la opción de excluirlo del clima.
-
-Para cambiar la ubicación, volver a iniciar sesión o eliminar tu cuenta: ajustes del dispositivo, Mantenimiento, Reparar.
+La app es gratuita y funciona con una cuenta gratuita de MeteoVeo. Los rayos cerca de tu casa forman parte de MeteoVeo Plus, el plan de pago de MeteoVeo (1,99 € al mes o 14,99 € al año, con prueba gratuita), que puedes contratar en la app de MeteoVeo para Android e iPhone.

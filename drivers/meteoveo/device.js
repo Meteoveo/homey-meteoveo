@@ -2,14 +2,15 @@
 
 const Homey = require('homey');
 const { InvalidKey, ServiceUnavailable } = require('../../lib/client');
-const { ICON_KEYS, capabilityValues, localDate } = require('../../lib/convert');
+const { ICON_KEYS, capabilityValues } = require('../../lib/convert');
 const { initialRainState, nextRainState, rainWithinMinutes, rainIntensityWithin } = require('../../lib/rain');
 const { newWarnings, levelAtLeast, levelTransition, phenomenonActive } = require('../../lib/warnings');
 const { dailyCapabilityValues, dayForecast, precipChance } = require('../../lib/forecast');
 const {
   comfortCapabilityValues, maxGustWithin, isSunny, tropicalNight, coolerOutside, warningNotice,
 } = require('../../lib/comfort');
-const { buildWuParams, freshReadings, DailyRain } = require('../../lib/wu');
+const { buildWuParams, freshReadings } = require('../../lib/wu');
+const { upgradeStationStore } = require('../../lib/pairing');
 const { initialLightningState, nextLightningState, compass, lightningWithin, lightningCapability } = require('../../lib/lightning');
 
 // The contract asks for at most one forecast request per five minutes.
@@ -25,17 +26,6 @@ const RADAR_IMAGE_MS = 10 * 60_000;
 // The climate tip waits until the user has chosen the zone after pairing.
 const CLIMATE_ADVICE_DELAY_MS = 10 * 60_000;
 
-// Homey's internal units for the capabilities a source device may offer.
-const DEFAULT_UNITS = {
-  measure_temperature: '°C',
-  measure_humidity: '%',
-  measure_pressure: 'mbar',
-  measure_wind_strength: 'km/h',
-  measure_gust_strength: 'km/h',
-  measure_wind_angle: '°',
-  meter_rain: 'mm',
-};
-
 function utcStamp(ms) {
   return new Date(ms).toISOString().replace('T', ' ').slice(0, 19);
 }
@@ -47,7 +37,6 @@ class MeteoVeoDevice extends Homey.Device {
     this._failures = 0;
     this._pausedUntil = 0;
     this._readings = {};
-    this._dailyRain = DailyRain.fromJSON(this.getStoreValue('dailyRain'));
 
     for (const capability of this.driver.manifest.capabilities) {
       if (!this.hasCapability(capability)) await this.addCapability(capability).catch(this.error);
@@ -59,6 +48,7 @@ class MeteoVeoDevice extends Homey.Device {
     }
     // Defaults Homey did not fill in (seen as "-" after a custom pairing).
     if (this.getSetting('notify_warnings') == null) await this.setSettings({ notify_warnings: 'orange', notify_rain: false }).catch(this.error);
+    await this._upgradeStation();
     if (!this.getStoreValue('climateAdviceDone')) {
       this._adviceTimer = this.homey.setTimeout(() => this._safe(this._climateAdvice()), CLIMATE_ADVICE_DELAY_MS);
     }
@@ -272,22 +262,24 @@ class MeteoVeoDevice extends Homey.Device {
    * ours included — even in an outdoor zone, the home level counts it (seen on
    * the owner's Pro, 2026-10-24). Apps may not set `climate_exclude` (Web API:
    * "Missing Scopes"), so once per device, ten minutes after pairing (when the
-   * user has picked the zone), we say how — unless it is already excluded.
+   * user has picked the zone), we say how.
    */
   async _climateAdvice() {
     if (this.getStoreValue('climateAdviceDone')) return;
-    try {
-      const api = await this.homey.app.api();
-      const me = Object.values(await api.devices.getDevices()).find((d) => String(d.driverId || '')
-        .startsWith('homey:app:com.meteoveo:') && d.data && d.data.id === this.getData().id);
-      if (!me) return;
-      if (!(me.settings && me.settings.climate_exclude === true)) {
-        await this._notify(this.homey.__('notifications.climate', { device: this.getName() }));
-      }
-      await this.setStoreValue('climateAdviceDone', true);
-    } catch (err) {
-      this.error('climate advice skipped:', err && err.message);
-    }
+    await this._notify(this.homey.__('notifications.climate', { device: this.getName() }));
+    await this.setStoreValue('climateAdviceDone', true);
+  }
+
+  /** A Build 1 device-mode station now takes its readings from Flow cards (ADR-0829, 2026-10-26). */
+  async _upgradeStation() {
+    const upgrade = upgradeStationStore({
+      station: this.getStoreValue('station'), stationMode: this.getStoreValue('stationMode'),
+    });
+    if (!upgrade) return;
+    await this.setStoreValue('stationMode', upgrade.stationMode);
+    await this.setStoreValue('stationSources', null);
+    await this.setStoreValue('dailyRain', null);
+    if (upgrade.notify) await this._notify(this.homey.__('notifications.station_flow', { device: this.getName() }));
   }
 
   _trigger(cardId, tokens, state = {}) {
@@ -389,46 +381,13 @@ class MeteoVeoDevice extends Homey.Device {
 
   async report(measurement, value, unit) {
     if (!this.getStoreValue('station')) throw new Error(this.homey.__('errors.no_station'));
-    const sources = this.getStoreValue('stationSources') || {};
-    // One source per measurement: mixing a device and a Flow into one series
-    // would make the data meaningless.
-    if (sources[measurement]) throw new Error(this.homey.__('errors.measurement_from_device'));
     this._readings[measurement] = { value: Number(value), unit, at: Date.now() };
-  }
-
-  async _readSources(now) {
-    const sources = this.getStoreValue('stationSources') || {};
-    if (!Object.keys(sources).length) return;
-    const api = await this.homey.app.api();
-    for (const [measurement, source] of Object.entries(sources)) {
-      let device;
-      try {
-        device = await api.devices.getDevice({ id: source.deviceId });
-      } catch {
-        delete this._readings[measurement];
-        continue;
-      }
-      const state = (device.capabilitiesObj || {})[source.capability];
-      if (device.available === false || !state || typeof state.value !== 'number') {
-        delete this._readings[measurement];
-        continue;
-      }
-      let { value } = state;
-      let unit = state.units || DEFAULT_UNITS[source.capability] || '';
-      if (measurement === 'daily_rain') {
-        value = this._dailyRain.update(state.value, localDate(now, this._tz()));
-        unit = 'mm';
-        await this.setStoreValue('dailyRain', this._dailyRain.toJSON());
-      }
-      this._readings[measurement] = { value, unit, at: now };
-    }
   }
 
   async _uploadOnce() {
     const station = this.getStoreValue('station');
     if (!station) return;
     const now = Date.now();
-    if (this.getStoreValue('stationMode') === 'devices') await this._readSources(now);
     const params = buildWuParams(freshReadings(this._readings, now, FLOW_READING_MAX_AGE_MS));
     if (!Object.keys(params).length) return;
     try {

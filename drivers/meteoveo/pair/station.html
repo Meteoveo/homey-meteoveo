@@ -5,17 +5,11 @@
 </header>
 
 <form class="homey-form">
-  <p class="mv-found" id="found" style="display:none"></p>
   <fieldset class="homey-form-radio-set">
     <label class="homey-form-radio">
       <input class="homey-form-radio-input" type="radio" name="have" value="no" checked />
       <span class="homey-form-radio-checkmark"></span>
       <span class="homey-form-radio-text" data-i18n="pair.station.no"></span>
-    </label>
-    <label class="homey-form-radio">
-      <input class="homey-form-radio-input" type="radio" name="have" value="devices" />
-      <span class="homey-form-radio-checkmark"></span>
-      <span class="homey-form-radio-text" data-i18n="pair.station.devices"></span>
     </label>
     <label class="homey-form-radio">
       <input class="homey-form-radio-input" type="radio" name="have" value="flow" />
@@ -30,8 +24,7 @@
       <input class="homey-form-input" id="height" type="number" min="10" max="5000" step="10" value="150" />
       <p class="mv-hint" data-i18n="pair.station.height_hint"></p>
     </div>
-    <div id="sources"></div>
-    <p class="mv-hint" id="flow-hint" data-i18n="pair.station.flow_hint"></p>
+    <p class="mv-hint" data-i18n="pair.station.flow_hint"></p>
   </div>
 
   <p class="mv-hint" data-i18n="pair.station.climate_tip"></p>
@@ -41,7 +34,6 @@
 
 <style>
   #mv-station .mv-hint { font-size: 13px; opacity: .7; margin: 6px 0 16px; }
-  #mv-station .mv-found { margin: 0 0 12px; padding: 10px 12px; border-radius: 10px; background: rgba(43, 111, 168, .1); font-size: 14px; }
 </style>
 
 <script type="text/javascript">
@@ -52,21 +44,6 @@
     const t = (key) => Homey.__(key);
     root.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
     const have = () => root.querySelector('input[name="have"]:checked').value;
-    let candidates = null;
-    let detected = { station: null, preselect: {} };
-    let loading = null;
-
-    // Candidates are read once, on load: a station found among the Homey
-    // devices is proposed right away instead of after a hunt through menus.
-    function load() {
-      if (!loading) {
-        loading = Homey.emit('station_candidates').then((result) => {
-          candidates = (result && result.candidates) || {};
-          detected = (result && result.detected) || detected;
-        });
-      }
-      return loading;
-    }
 
     function explain(err) {
       const key = 'errors.' + (err && err.message);
@@ -74,55 +51,11 @@
       Homey.alert(text && text !== key ? text : t('errors.unknown'), 'error');
     }
 
-    async function renderSources() {
-      const box = root.querySelector('#sources');
-      box.textContent = '';
-      if (have() !== 'devices') return;
-      if (!candidates) {
-        Homey.showLoadingOverlay();
-        try { await load(); } catch (err) { explain(err); return; } finally { Homey.hideLoadingOverlay(); }
-      }
-      for (const [measurement, list] of Object.entries(candidates)) {
-        const group = document.createElement('div');
-        group.className = 'homey-form-group';
-        const label = document.createElement('label');
-        label.className = 'homey-form-label';
-        label.htmlFor = 'src-' + measurement;
-        label.textContent = t('measurements.' + measurement);
-        const select = document.createElement('select');
-        select.className = 'homey-form-select';
-        select.id = 'src-' + measurement;
-        select.dataset.measurement = measurement;
-        select.add(new Option(t('pair.station.none'), ''));
-        for (const c of list) {
-          const where = c.zone ? ' · ' + c.zone : '';
-          const now = c.value === null ? '' : ' (' + c.value + ' ' + c.units + ')';
-          select.add(new Option(c.name + where + now, JSON.stringify({ deviceId: c.deviceId, capability: c.capability })));
-        }
-        const pick = detected.preselect[measurement];
-        if (pick) select.value = JSON.stringify({ deviceId: pick.deviceId, capability: pick.capability });
-        group.append(label, select);
-        box.append(group);
-      }
-    }
-
+    // Readings come from the "Send … to MeteoVeo" Flow cards only.
     function render() {
-      const mode = have();
-      root.querySelector('#station').style.display = mode === 'no' ? 'none' : '';
-      root.querySelector('#flow-hint').style.display = mode === 'flow' ? '' : 'none';
-      renderSources();
+      root.querySelector('#station').style.display = have() === 'no' ? 'none' : '';
     }
     root.querySelectorAll('input[name="have"]').forEach((el) => el.addEventListener('change', render));
-
-    load().then(() => {
-      if (!detected.station) return;
-      const where = detected.station.zone ? ' · ' + detected.station.zone : '';
-      const found = root.querySelector('#found');
-      found.textContent = Homey.__('pair.station.found', { name: detected.station.name + where });
-      found.style.display = '';
-      root.querySelector('input[name="have"][value="devices"]').checked = true;
-      render();
-    }).catch(() => {});
 
     let busy = false;
     root.querySelector('form').addEventListener('submit', async (event) => {
@@ -132,14 +65,7 @@
       try { await submit(); } finally { busy = false; }
     });
     async function submit() {
-      const mode = have();
-      let station = null;
-      if (mode !== 'no') {
-        const sources = {};
-        root.querySelectorAll('#sources select').forEach((s) => { if (s.value) sources[s.dataset.measurement] = JSON.parse(s.value); });
-        if (mode === 'devices' && !Object.keys(sources).length) { Homey.alert(t('errors.no_sources'), 'error'); return; }
-        station = { mode, sensorHeightCm: Number(root.querySelector('#height').value), sources };
-      }
+      const station = have() === 'no' ? null : { sensorHeightCm: Number(root.querySelector('#height').value) };
       Homey.showLoadingOverlay();
       try {
         await Homey.emit('set_station', { station });

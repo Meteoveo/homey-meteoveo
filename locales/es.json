@@ -40,13 +40,10 @@
       "title": "¿Tienes una estación meteorológica?",
       "subtitle": "Opcional. Sus medidas afinan la previsión de tu casa, y puedes seguir tu estación en la app de MeteoVeo.",
       "no": "No, solo quiero la previsión",
-      "devices": "Sí, elijo sus dispositivos en Homey",
       "flow": "Sí, enviaré las medidas con Flows",
       "height": "Altura del sensor sobre el suelo (cm)",
       "height_hint": "Sirve para comparar tus medidas con las de las estaciones cercanas.",
-      "flow_hint": "Después, crea un Flow como: Cuando cambie la temperatura de tu estación → MeteoVeo: Enviar temperatura.",
-      "none": "Ninguno",
-      "found": "Hemos encontrado una estación meteorológica en tu Homey: __name__. Abajo están sus medidas seleccionadas; revísalas antes de terminar.",
+      "flow_hint": "Después, crea un Flow como: Cuando cambie la temperatura de tu estación → MeteoVeo: Enviar temperatura a MeteoVeo.",
       "climate_tip": "Consejo: para que la temperatura exterior no se mezcle con el clima de tu casa, activa en los ajustes avanzados de este dispositivo la opción de excluirlo del clima."
     }
   },
@@ -95,10 +92,8 @@
     "key_revoked": "La conexión se ha revocado. Usa Reparar para volver a entrar.",
     "no_nowcast": "Ahora mismo no hay previsión de la próxima hora para esta ubicación.",
     "no_station": "Esta ubicación no tiene estación. Quítala y vuelve a añadirla para conectar una.",
-    "measurement_from_device": "Esta medida ya llega de un dispositivo elegido al conectar.",
     "station_key_rejected": "MeteoVeo ha rechazado la clave de la estación. Quita esta ubicación y vuelve a añadirla.",
     "account_deleted": "Tu cuenta de MeteoVeo se ha eliminado.",
-    "no_sources": "Elige al menos un dispositivo, o la opción de Flows.",
     "no_forecast": "Todavía no hay previsión para ese día.",
     "plus_required": "Disponible con MeteoVeo Plus.",
     "no_lightning": "Ahora mismo no hay datos de rayos."
@@ -126,7 +121,8 @@
     "account_deleted": "Tu cuenta de MeteoVeo se ha eliminado. Ya puedes quitar los dispositivos de MeteoVeo.",
     "warning": "Aviso __level__ por __phenomenon__ en __place__ hasta el __until__",
     "rain": "Lluvia en __place__ dentro de unos __minutes__ min",
-    "climate": "Homey cuenta la temperatura exterior de __device__ en el clima de tu casa. Para que no se mezcle, abre los ajustes del dispositivo, entra en los ajustes avanzados y activa la opción de excluirlo del clima."
+    "climate": "Homey cuenta la temperatura exterior de __device__ en el clima de tu casa. Para que no se mezcle, abre los ajustes del dispositivo, entra en los ajustes avanzados y activa la opción de excluirlo del clima.",
+    "station_flow": "__device__: las medidas de tu estación meteorológica llegan ahora a MeteoVeo con Flows. Crea un Flow como: Cuando cambie la temperatura de tu estación → __device__: Enviar temperatura a MeteoVeo. Tu estación sigue igual."
   },
   "intensity": {
     "none": "ninguna",

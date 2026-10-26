@@ -5,7 +5,7 @@ Hyperlocal weather for Spain in Homey: next-hour rain, current conditions, AEMET
 - **Install:** search for *MeteoVeo* in the Homey App Store (Homey Pro only).
 - **Account:** created or signed in during pairing — e-mail, password, e-mail code. The password is used once and never stored; Homey keeps a limited key that can read the forecast for one location (and upload to your station), nothing else.
 - **Remove vs. delete:** removing the device revokes only this Homey's key. Deleting the MeteoVeo account is under *Device → Repair*.
-- **Weather station:** pick its devices in Homey (uses the Homey Web API permission, only to read the devices you choose), or send readings with the *Send … to MeteoVeo* Flow cards.
+- **Weather station:** send its readings with the *Send … to MeteoVeo* Flow cards (one per measurement), for example from a When-card of your station's device.
 
 ## Flow cards
 
