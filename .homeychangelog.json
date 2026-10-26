@@ -2,5 +2,9 @@
   "0.1.0": {
     "en": "First release: next-hour rain, our own 3-hour forecast, current conditions, AEMET warnings, Flow cards, two dashboard widgets (forecast and radar) and weather-station upload.",
     "es": "Primera versión: lluvia de la próxima hora, nuestra previsión de las próximas 3 horas, el estado del cielo actual, avisos de AEMET, tarjetas de Flow, dos widgets para el panel (previsión y radar) y envío de las medidas de tu estación."
+  },
+  "0.1.1": {
+    "en": "First public release: next-hour rain, our own 3-hour forecast, current conditions, AEMET warnings, Flow cards, two dashboard widgets (forecast and radar), and your weather station's readings sent to MeteoVeo with Flow cards.",
+    "es": "Primera versión pública: lluvia de la próxima hora, nuestra previsión de las próximas 3 horas, las condiciones actuales, avisos de AEMET, tarjetas de Flow, dos widgets para el panel (previsión y radar) y las medidas de tu estación enviadas a MeteoVeo con tarjetas de Flow."
   }
 }
